@@ -2,64 +2,137 @@ defmodule Entice.Cynosure.Entity do
   @moduledoc """
   Data-only entity built upon an Agent.
   """
+  import Map
   alias Entice.Cynosure.Entity
 
+
+  @typedoc """
+  Entity is either its agents directly, or its the entity id, accessible from the world.
+  When we get an entity id, we delegate the lookup of the entity to the world first.
+  """
   @type entity :: Agent.agent
+  @type entity_id :: String.t
+  @type world :: atom
+  @type attribute_type :: atom
 
-  defstruct id: "", event_manager: nil, attributes: %{}
 
-  def start_link(id, event_manager, opts \\ []) do
-    {attributes, _opts} = Keyword.pop(opts, :attributes, %{})
-    Agent.start_link(fn ->
-      %Entity{id: id, event_manager: event_manager, attributes: attributes}
-    end,
-    name: __MODULE__)
+  defstruct(
+    id: "",
+    world: nil,
+    attributes: %{})
+
+
+  # World-based API
+
+
+  @doc """
+  Will be called by the supervisor
+  """
+  def start_link(id, world, attributes, opts \\ []) do
+    Agent.start_link(
+      fn -> %Entity{id: id, world: world, attributes: attributes} end,
+      opts)
   end
 
 
-  @spec has_attribute?(entity, atom | %{__struct__: atom}) :: boolean
-  def has_attribute?(entity, %{__struct__: attribute_type}), do: has_attribute?(entity, attribute_type)
-  def has_attribute?(entity, attribute_type) do
+  @spec start(world, entity_id, Map, list) :: Agent.on_start
+  def start(world, entity_id, attributes \\ %{}, opts \\ []) do
+    ETSSupervisor.start(world, entity_id, [world, attributes | opts])
+    {:ok, entity_id}
+  end
+
+
+  @spec has_attribute?(world, entity_id, attribute_type) :: boolean | {:error, term}
+  def has_attribute?(world, entity_id, attribute_type) do
+    case ETSSupervisor.lookup(world, entity_id) do
+      {:ok, e} -> has_attribute?(e, attribute_type)
+      err -> err
+    end
+  end
+
+
+  @spec put_attribute(world, entity_id,  %{__struct__: attribute_type}) :: :ok | {:error, term}
+  def put_attribute(world, entity_id, attribute) do
+    case ETSSupervisor.lookup(world, entity_id) do
+      {:ok, e} -> put_attribute(e, attribute)
+      err -> err
+    end
+  end
+
+
+  @spec get_attribute(world, entity_id,  attribute_type) :: {:ok, any} | {:error, term}
+  def get_attribute(world, entity_id, attribute_type) do
+    case ETSSupervisor.lookup(world, entity_id) do
+      {:ok, e} -> get_attribute(e, attribute_type)
+      err -> err
+    end
+  end
+
+
+  @spec update_attribute(world, entity_id,  attribute_type, (any -> any)) :: :ok | {:error, term}
+  def update_attribute(world, entity_id, attribute_type, modifier) do
+    case ETSSupervisor.lookup(world, entity_id) do
+      {:ok, e} -> update_attribute(e, attribute_type, modifier)
+      err -> err
+    end
+  end
+
+
+  @spec remove_attribute(world, entity_id,  attribute_type) :: :ok | {:error, term}
+  def remove_attribute(world, entity_id, attribute_type) do
+    case ETSSupervisor.lookup(world, entity_id) do
+      {:ok, e} -> remove_attribute(e, attribute_type)
+      err -> err
+    end
+  end
+
+
+
+  # Agent-based (internal) API
+
+  defp has_attribute?(entity, attribute_type) do
     Agent.get(entity, fn %Entity{attributes: attrs} ->
-      Map.has_key?(attrs, attribute_type)
+      attrs |> has_key?(attribute_type)
     end)
   end
 
-
-  @spec put_attribute(entity, %{__struct__: atom}) :: :ok
-  def put_attribute(entity, attribute) do
+  defp put_attribute(entity, attribute) do
     Agent.update(entity, fn %Entity{attributes: attrs} = state ->
-      %Entity{state | attributes: Map.put(attrs, attribute.__struct__, attribute)}
+      %Entity{state | attributes: attrs |> put(attribute.__struct__, attribute)}
     end)
   end
 
-
-  @spec get_attribute(entity, atom | %{__struct__: atom}) :: {:ok, any} | :error
-  def get_attribute(entity, %{__struct__: attribute_type}), do: get_attribute(entity, attribute_type)
-  def get_attribute(entity, attribute_type) do
+  defp get_attribute(entity, attribute_type) do
     Agent.get(entity, fn %Entity{attributes: attrs} ->
-      Map.fetch(attrs, attribute_type)
+      attrs |> fetch(attribute_type)
     end)
   end
 
-
-  @spec update_attribute(entity, atom, (any -> any)) :: :ok
-  def update_attribute(entity, attribute_type, modifier) do
+  defp update_attribute(entity, attribute_type, modifier) do
     Agent.update(entity, fn %Entity{attributes: attrs} = state ->
-      if Map.has_key?(attrs, attribute_type) do
-        %Entity{state | attributes: Map.update!(attrs, attribute_type, modifier)}
+      if attrs |> has_key?(attribute_type) do
+        %Entity{state | attributes: attrs |> update!(attribute_type, modifier)}
       else
         state
       end
     end)
   end
 
-
-  @spec remove_attribute(entity, atom | %{__struct__: atom}) :: :ok
-  def remove_attribute(entity, %{__struct__: attribute_type}), do: remove_attribute(entity, attribute_type)
-  def remove_attribute(entity, attribute_type) do
+  defp remove_attribute(entity, attribute_type) do
     Agent.update(entity, fn %Entity{attributes: attrs} = state ->
-      %Entity{state | attributes: Map.delete(attrs, attribute_type)}
+      %Entity{state | attributes: attrs |> delete(attribute_type)}
     end)
+  end
+end
+
+
+defmodule Entice.Cynosure.Entity.Sup do
+  @moduledoc """
+  Simple entity supervisor that does not restart entities when they despawn.
+  """
+  alias Entice.Cynosure.Entity
+
+  def start_link(name) do
+    ETSSupervisor.Sup.start_link(name, Entity)
   end
 end
