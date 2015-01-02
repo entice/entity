@@ -42,6 +42,24 @@ defmodule Entice.Cynosure.Entity do
   end
 
 
+  @spec exists?(world, entity_id) :: boolean
+  def exists?(world, entity_id) do
+    case ETSSupervisor.lookup(world, entity_id) do
+      {:ok, _e} -> true
+      _ -> false
+    end
+  end
+
+
+  @spec change_world(world, world, entity_id) :: :ok | {:error, term}
+  def change_world(world1, world2, entity_id) do
+    case ETSSupervisor.lookup(world1, entity_id) do
+      {:ok, _e} -> ETSSupervisor.migrate(world1, world2, entity_id)
+      err -> err
+    end
+  end
+
+
   @spec has_attribute?(world, entity_id, attribute_type) :: boolean | {:error, term}
   def has_attribute?(world, entity_id, attribute_type) do
     case ETSSupervisor.lookup(world, entity_id) do

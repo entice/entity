@@ -1,18 +1,29 @@
 defmodule Entice.Cynosure.EntityTest do
-  use ExUnit.Case
+  use ExUnit.Case, async: false
   alias Entice.Cynosure.Entity
 
   defmodule TestAttr1, do: defstruct foo: 1337, bar: "lol"
   defmodule TestAttr2, do: defstruct baz: false
 
-  @world Entice.Cynosure.EntityTest
+  @world Entice.Cynosure.EntityTest.World1
+  @world2 Entice.Cynosure.EntityTest.World2
 
   setup do
     # Set up a supervisor for entities of this world
     {:ok, _sup} = Entity.Sup.start_link(@world) # Takes a name for the world
+    {:ok, _sup} = Entity.Sup.start_link(@world2)
     # Create a new entity: Choose and ID and attribute set
     {:ok, entity_id} = Entity.start(@world, UUID.uuid1(), %{TestAttr1 => %TestAttr1{}})
     {:ok, [entity: entity_id]}
+  end
+
+
+  test "world change", %{entity: entity_id} do
+    assert Entity.exists?(@world, entity_id) == true
+    assert Entity.exists?(@world2, entity_id) == false
+    Entity.change_world(@world, @world2, entity_id)
+    assert Entity.exists?(@world, entity_id) == false
+    assert Entity.exists?(@world2, entity_id) == true
   end
 
 

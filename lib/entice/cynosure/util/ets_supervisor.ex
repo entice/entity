@@ -5,6 +5,7 @@ defmodule ETSSupervisor do
   @moduledoc """
   Module responsible to control and interact with ETSSupervisor.
   """
+  use GenServer
 
   @doc """
   Starts the server, invoked by the app supervisor.
@@ -31,6 +32,37 @@ defmodule ETSSupervisor do
   end
 
   @doc """
+  Tries to move a worker from one table to another.
+  Might fail with an exception if the worker doesnt exist.
+  """
+  def migrate(name1, name2, id) do
+    {:ok, ^id, pid} = pop(name1, id)
+    inject(name2, id, pid)
+  end
+
+  @doc """
+  Inject an already existing worker into a table.
+  """
+  def inject(name, id, pid) do
+    GenServer.call(name, {:inject, id, pid})
+  end
+
+  @doc """
+  Tries to pop a worker from the table.
+  Can fail with an error if the worker does not exist.
+  """
+  def pop(name, id) do
+    GenServer.call(name, {:pop, id})
+  end
+
+  @doc """
+  Kills a worker if it exists. Does nothing otherwise.
+  """
+  def terminate(name, id) do
+    GenServer.call(name, {:terminate, id})
+  end
+
+  @doc """
   Termiante all servers, cleaning up the ets table. Used by tests.
   """
   def clear(name) do
@@ -39,24 +71,50 @@ defmodule ETSSupervisor do
 
   ## Backend
 
-  use GenServer
-
-  @doc false
   def init(name) do
     :ets.new(name, [:set, :protected, :named_table, {:read_concurrency, true}])
     {:ok, name}
   end
 
-  @doc false
   def handle_call({:start, id, args}, _from, name) do
     case :ets.lookup(name, id) do
-      [{^id, pid}] ->
-        {:reply, pid, name}
+      [{^id, other_pid}] ->
+        {:reply, {:error, :process_already_registered, other_pid}, name}
       _ ->
         {:ok, pid} = ETSSupervisor.Spawner.start_child(name.Spawner, id, args)
         Process.monitor(pid)
         :ets.insert(name, {id, pid})
         {:reply, pid, name}
+    end
+  end
+
+  def handle_call({:inject, id, pid}, _from, name) do
+    case :ets.lookup(name, id) do
+      [{^id, other_pid}] ->
+        {:reply, {:error, :process_already_registered, other_pid}, name}
+      _ ->
+        Process.monitor(pid)
+        :ets.insert(name, {id, pid})
+        {:reply, {:ok, pid}, name}
+    end
+  end
+
+  def handle_call({:pop, id}, _from, name) do
+    case :ets.lookup(name, id) do
+      [{^id, pid}] ->
+        :ets.delete(name, id)
+        {:reply, {:ok, id, pid}, name}
+      _ -> {:reply, :error, name}
+    end
+  end
+
+  def handle_call({:terminate, id}, _from, name) do
+    case :ets.lookup(name, id) do
+      [{^id, _pid}] ->
+        ETSSupervisor.Spawner.terminate_child(name.Spawner, id)
+        :ets.delete(name, id)
+        {:reply, :ok, name}
+      _ -> {:reply, :error, name}
     end
   end
 
