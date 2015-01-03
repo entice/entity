@@ -1,6 +1,6 @@
-[![Build Status](https://travis-ci.org/entice/cynosure.svg)](https://travis-ci.org/entice/cynosure)
+[![Build Status](https://travis-ci.org/entice/cynosure.svg)](https://travis-ci.org/entice/area)
 
-cynosure
+Entice.Area
 ========
 
-Serves a world. Worlds are event-driven entity-component-systems.
+Serves areas. Areas are event-driven entity-systems.

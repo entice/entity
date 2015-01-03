@@ -1,18 +1,18 @@
-defmodule Entice.Cynosure.WorldsTest do
+defmodule Entice.AreaTest do
   use ExUnit.Case
-  alias Entice.Cynosure.Entity
-  alias Entice.Cynosure.Worlds
-  alias Entice.Cynosure.Worlds.TeamArenas
+  alias Entice.Area
+  alias Entice.Area.Entity
+  alias Entice.Area.TeamArenas
 
   defmodule TestAttr, do: defstruct foo: 1337
 
   setup_all do
-    {:ok, _sup} = Entice.Cynosure.Worlds.Sup.start_link
+    {:ok, _sup} = Entice.Area.Sup.start_link
     :ok
   end
 
   test "worlds api", _ctx do
-    {:ok, TeamArenas} = Worlds.get_world("TeamArenas")
+    {:ok, TeamArenas} = Area.get_map("TeamArenas")
   end
 
   test "entity api", _ctx do

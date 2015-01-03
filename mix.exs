@@ -1,8 +1,8 @@
-defmodule Entice.Cynosure.Mixfile do
+defmodule Entice.Area.Mixfile do
   use Mix.Project
 
   def project do
-    [app: :entice_cynosure,
+    [app: :entice_area,
      version: "0.0.1",
      elixir: "~> 1.0",
      deps: deps]
@@ -10,7 +10,7 @@ defmodule Entice.Cynosure.Mixfile do
 
   #def application do
   #  [applications: [:logger],
-  #   mod: {Entice.Cynosure, []}]
+  #   mod: {Entice.Area, []}]
   #end
 
   defp deps do

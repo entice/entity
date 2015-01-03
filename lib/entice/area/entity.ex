@@ -1,24 +1,25 @@
-defmodule Entice.Cynosure.Entity do
+defmodule Entice.Area.Entity do
   @moduledoc """
   Data-only entity built upon an Agent.
   """
   import Map
-  alias Entice.Cynosure.Entity
+  alias Entice.Area.Entity
+  alias Entice.Area.Util.ETSSupervisor
 
 
   @typedoc """
-  Entity is either its agents directly, or its the entity id, accessible from the world.
-  When we get an entity id, we delegate the lookup of the entity to the world first.
+  Entity is either its agents directly, or its the entity id, accessible from the area.
+  When we get an entity id, we delegate the lookup of the entity to the area first.
   """
   @type entity :: Agent.agent
   @type entity_id :: String.t
-  @type world :: atom
+  @type area :: atom
   @type attribute_type :: atom
 
 
   defstruct(
     id: "",
-    world: nil,
+    area: nil,
     attributes: %{})
 
 
@@ -28,77 +29,77 @@ defmodule Entice.Cynosure.Entity do
   @doc """
   Will be called by the supervisor
   """
-  def start_link(id, world, attributes, opts \\ []) do
+  def start_link(id, area, attributes, opts \\ []) do
     Agent.start_link(
-      fn -> %Entity{id: id, world: world, attributes: attributes} end,
+      fn -> %Entity{id: id, area: area, attributes: attributes} end,
       opts)
   end
 
 
-  @spec start(world, entity_id, Map, list) :: Agent.on_start
-  def start(world, entity_id, attributes \\ %{}, opts \\ []) do
-    ETSSupervisor.start(world, entity_id, [world, attributes | opts])
+  @spec start(area, entity_id, Map, list) :: Agent.on_start
+  def start(area, entity_id, attributes \\ %{}, opts \\ []) do
+    ETSSupervisor.start(area, entity_id, [area, attributes | opts])
     {:ok, entity_id}
   end
 
 
-  @spec exists?(world, entity_id) :: boolean
-  def exists?(world, entity_id) do
-    case ETSSupervisor.lookup(world, entity_id) do
+  @spec exists?(area, entity_id) :: boolean
+  def exists?(area, entity_id) do
+    case ETSSupervisor.lookup(area, entity_id) do
       {:ok, _e} -> true
       _ -> false
     end
   end
 
 
-  @spec change_world(world, world, entity_id) :: :ok | {:error, term}
-  def change_world(world1, world2, entity_id) do
-    case ETSSupervisor.lookup(world1, entity_id) do
-      {:ok, _e} -> ETSSupervisor.migrate(world1, world2, entity_id)
+  @spec change_area(area, area, entity_id) :: :ok | {:error, term}
+  def change_area(area1, area2, entity_id) do
+    case ETSSupervisor.lookup(area1, entity_id) do
+      {:ok, _e} -> ETSSupervisor.migrate(area1, area2, entity_id)
       err -> err
     end
   end
 
 
-  @spec has_attribute?(world, entity_id, attribute_type) :: boolean | {:error, term}
-  def has_attribute?(world, entity_id, attribute_type) do
-    case ETSSupervisor.lookup(world, entity_id) do
+  @spec has_attribute?(area, entity_id, attribute_type) :: boolean | {:error, term}
+  def has_attribute?(area, entity_id, attribute_type) do
+    case ETSSupervisor.lookup(area, entity_id) do
       {:ok, e} -> has_attribute?(e, attribute_type)
       err -> err
     end
   end
 
 
-  @spec put_attribute(world, entity_id,  %{__struct__: attribute_type}) :: :ok | {:error, term}
-  def put_attribute(world, entity_id, attribute) do
-    case ETSSupervisor.lookup(world, entity_id) do
+  @spec put_attribute(area, entity_id,  %{__struct__: attribute_type}) :: :ok | {:error, term}
+  def put_attribute(area, entity_id, attribute) do
+    case ETSSupervisor.lookup(area, entity_id) do
       {:ok, e} -> put_attribute(e, attribute)
       err -> err
     end
   end
 
 
-  @spec get_attribute(world, entity_id,  attribute_type) :: {:ok, any} | {:error, term}
-  def get_attribute(world, entity_id, attribute_type) do
-    case ETSSupervisor.lookup(world, entity_id) do
+  @spec get_attribute(area, entity_id,  attribute_type) :: {:ok, any} | {:error, term}
+  def get_attribute(area, entity_id, attribute_type) do
+    case ETSSupervisor.lookup(area, entity_id) do
       {:ok, e} -> get_attribute(e, attribute_type)
       err -> err
     end
   end
 
 
-  @spec update_attribute(world, entity_id,  attribute_type, (any -> any)) :: :ok | {:error, term}
-  def update_attribute(world, entity_id, attribute_type, modifier) do
-    case ETSSupervisor.lookup(world, entity_id) do
+  @spec update_attribute(area, entity_id,  attribute_type, (any -> any)) :: :ok | {:error, term}
+  def update_attribute(area, entity_id, attribute_type, modifier) do
+    case ETSSupervisor.lookup(area, entity_id) do
       {:ok, e} -> update_attribute(e, attribute_type, modifier)
       err -> err
     end
   end
 
 
-  @spec remove_attribute(world, entity_id,  attribute_type) :: :ok | {:error, term}
-  def remove_attribute(world, entity_id, attribute_type) do
-    case ETSSupervisor.lookup(world, entity_id) do
+  @spec remove_attribute(area, entity_id,  attribute_type) :: :ok | {:error, term}
+  def remove_attribute(area, entity_id, attribute_type) do
+    case ETSSupervisor.lookup(area, entity_id) do
       {:ok, e} -> remove_attribute(e, attribute_type)
       err -> err
     end
@@ -144,11 +145,12 @@ defmodule Entice.Cynosure.Entity do
 end
 
 
-defmodule Entice.Cynosure.Entity.Sup do
+defmodule Entice.Area.Entity.Sup do
   @moduledoc """
   Simple entity supervisor that does not restart entities when they despawn.
   """
-  alias Entice.Cynosure.Entity
+  alias Entice.Area.Entity
+  alias Entice.Area.Util.ETSSupervisor
 
   def start_link(name) do
     ETSSupervisor.Sup.start_link(name, Entity)

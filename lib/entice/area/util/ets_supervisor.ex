@@ -1,11 +1,12 @@
 # Idea taken from José Valim:
 # https://gist.github.com/josevalim/233ae30533a9ad51861b
 
-defmodule ETSSupervisor do
+defmodule Entice.Area.Util.ETSSupervisor do
   @moduledoc """
   Module responsible to control and interact with ETSSupervisor.
   """
   use GenServer
+  alias Entice.Area.Util.ETSSupervisor
 
   @doc """
   Starts the server, invoked by the app supervisor.
@@ -139,7 +140,7 @@ defmodule ETSSupervisor do
 end
 
 
-defmodule ETSSupervisor.Spawner do
+defmodule Entice.Area.Util.ETSSupervisor.Spawner do
   @moduledoc false
   use Supervisor
 
@@ -164,9 +165,10 @@ defmodule ETSSupervisor.Spawner do
 end
 
 
-defmodule ETSSupervisor.Sup do
+defmodule Entice.Area.Util.ETSSupervisor.Sup do
   @moduledoc false
   use Supervisor
+  alias Entice.Area.Util.ETSSupervisor
 
   def start_link(name, spawned) do
     Supervisor.start_link(__MODULE__, {name, spawned})
