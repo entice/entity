@@ -26,6 +26,14 @@ defmodule Entice.Area.Util.ETSSupervisor do
   end
 
   @doc """
+  Retrieves all currently registered entries, as a
+  list of id and process.
+  """
+  def get_all(name) do
+    :ets.tab2list(name)
+  end
+
+  @doc """
   Manually requests a worker to be started.
   """
   def start(name, id, args \\ []) do

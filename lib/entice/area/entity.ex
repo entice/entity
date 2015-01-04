@@ -52,6 +52,17 @@ defmodule Entice.Area.Entity do
   end
 
 
+  @spec get_entity_dump(area) :: [%{id: entity_id, attributes: Map}]
+  def get_entity_dump(area) do
+    ETSSupervisor.get_all(area)
+    |> Enum.map(fn {_, e} -> e |> Agent.get(&(&1)) end)
+    |> Enum.map(
+      fn %Entity{id: id, area: _, attributes: attrs} ->
+        %{id: id, attributes: attrs}
+      end)
+  end
+
+
   @spec change_area(area, area, entity_id) :: :ok | {:error, term}
   def change_area(area1, area2, entity_id) do
     case ETSSupervisor.lookup(area1, entity_id) do

@@ -27,6 +27,14 @@ defmodule Entice.Area.EntityTest do
   end
 
 
+  test "entity dump", %{entity: entity_id} do
+    {:ok, entity_id2} = Entity.start(@map, UUID.uuid4(), %{TestAttr2 => %TestAttr2{}})
+    dump = Entity.get_entity_dump(@map)
+    assert %{id: entity_id, attributes: %{TestAttr1 => %TestAttr1{}}} in dump
+    assert %{id: entity_id2, attributes: %{TestAttr2 => %TestAttr2{}}} in dump
+  end
+
+
   test "attribute adding", %{entity: entity_id} do
     Entity.put_attribute(@map, entity_id, %TestAttr2{})
     assert Entity.has_attribute?(@map, entity_id, TestAttr2) == true
