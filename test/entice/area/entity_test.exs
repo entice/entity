@@ -13,7 +13,7 @@ defmodule Entice.Area.EntityTest do
     {:ok, _sup} = Entity.Sup.start_link(@map) # Takes a name for the map
     {:ok, _sup} = Entity.Sup.start_link(@map2)
     # Create a new entity: Choose and ID and attribute set
-    {:ok, entity_id} = Entity.start(@map, UUID.uuid1(), %{TestAttr1 => %TestAttr1{}})
+    {:ok, entity_id} = Entity.start(@map, UUID.uuid4(), %{TestAttr1 => %TestAttr1{}})
     {:ok, [entity: entity_id]}
   end
 

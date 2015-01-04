@@ -16,7 +16,7 @@ defmodule Entice.AreaTest do
   end
 
   test "entity api", _ctx do
-    {:ok, id} = Entity.start(TeamArenas, UUID.uuid1())
+    {:ok, id} = Entity.start(TeamArenas, UUID.uuid4())
     :ok = Entity.put_attribute(TeamArenas, id, %TestAttr{})
     assert Entity.has_attribute?(TeamArenas, id, TestAttr) == true
   end
