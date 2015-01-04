@@ -43,6 +43,13 @@ defmodule Entice.Area.Entity do
   end
 
 
+  @spec stop(area, entity_id) :: :ok
+  def stop(area, entity_id) do
+    ETSSupervisor.terminate(area, entity_id)
+    :ok
+  end
+
+
   @spec exists?(area, entity_id) :: boolean
   def exists?(area, entity_id) do
     case ETSSupervisor.lookup(area, entity_id) do
