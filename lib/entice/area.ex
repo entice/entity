@@ -1,5 +1,13 @@
 defmodule Entice.Area do
 
+  defmacro __using__(_) do
+    quote do
+      alias Entice.Area.HeroesAscent
+      alias Entice.Area.RandomArenas
+      alias Entice.Area.TeamArenas
+    end
+  end
+
   defmodule Map do
     @moduledoc """
     This macro puts all common map functions inside the module that uses it
