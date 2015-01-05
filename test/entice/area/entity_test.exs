@@ -1,5 +1,5 @@
 defmodule Entice.Area.EntityTest do
-  use ExUnit.Case, async: false
+  use ExUnit.Case
   alias Entice.Area.Entity
 
   defmodule TestAttr1, do: defstruct foo: 1337, bar: "lol"
@@ -8,10 +8,15 @@ defmodule Entice.Area.EntityTest do
   @map Entice.Area.EntityTest.Map1
   @map2 Entice.Area.EntityTest.Map2
 
-  setup do
-    # Set up a supervisor for entities of this map
+
+  setup_all do
+     # Set up a supervisor for entities of this map
     {:ok, _sup} = Entity.Sup.start_link(@map) # Takes a name for the map
     {:ok, _sup} = Entity.Sup.start_link(@map2)
+    :ok
+  end
+
+  setup do
     # Create a new entity: Choose and ID and attribute set
     {:ok, entity_id} = Entity.start(@map, UUID.uuid4(), %{TestAttr1 => %TestAttr1{}})
     {:ok, [entity: entity_id]}
