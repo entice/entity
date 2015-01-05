@@ -3,6 +3,7 @@ defmodule Entice.Area.Attributes do
 
   defmacro __using__(_) do
     quote do
+      alias Entice.Area.Geom.Coord
       alias Entice.Area.Attributes.Name
       alias Entice.Area.Attributes.Position
     end
