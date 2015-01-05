@@ -23,10 +23,29 @@ defmodule Entice.Area do
 
         defoverridable [name: 0, spawn: 0]
 
+        # Define an event manager
+        evt_name = Module.concat(__MODULE__, "Evt")
+        evt_contents = quote do
+          def start_link, do: GenEvent.start_link([name: unquote(evt_name)])
+        end
+
+        Module.create(evt_name, evt_contents, Macro.Env.location(__ENV__))
+
+
         # Define a supervisor
         sup_name = Module.concat(__MODULE__, "Sup")
         sup_contents = quote do
-          def start_link, do: Entice.Area.Entity.Sup.start_link(unquote(__MODULE__))
+          use Supervisor
+
+          def start_link, do: Supervisor.start_link(unquote(sup_name), :ok)
+
+          def init(:ok) do
+            children = [
+              worker(unquote(evt_name), []),
+              supervisor(Entice.Area.Entity.Sup, [unquote(__MODULE__)])
+            ]
+            supervise(children, strategy: :one_for_one)
+          end
         end
 
         Module.create(sup_name, sup_contents, Macro.Env.location(__ENV__))

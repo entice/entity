@@ -1,16 +1,22 @@
 defmodule Entice.Area.EntityTest do
   use ExUnit.Case
   alias Entice.Area.Entity
+  alias Entice.Area.Map
 
   defmodule TestAttr1, do: defstruct foo: 1337, bar: "lol"
   defmodule TestAttr2, do: defstruct baz: false
+
+  #defmodule Map1, do: use Map
+  #defmodule Map2, do: use Map
 
   @map Entice.Area.EntityTest.Map1
   @map2 Entice.Area.EntityTest.Map2
 
 
   setup_all do
-     # Set up a supervisor for entities of this map
+    # Set up a supervisor for entities of this map
+    GenEvent.start_link([name: @map.Evt])
+    GenEvent.start_link([name: @map2.Evt])
     {:ok, _sup} = Entity.Sup.start_link(@map) # Takes a name for the map
     {:ok, _sup} = Entity.Sup.start_link(@map2)
     :ok
