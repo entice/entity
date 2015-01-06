@@ -1,7 +1,6 @@
 defmodule Entice.Area.EntityTest do
   use ExUnit.Case
   alias Entice.Area.Entity
-  alias Entice.Area.Map
 
   defmodule TestAttr1, do: defstruct foo: 1337, bar: "lol"
   defmodule TestAttr2, do: defstruct baz: false
@@ -14,8 +13,6 @@ defmodule Entice.Area.EntityTest do
 
 
   setup_all do
-    # Set up a supervisor for entities of this map
-    Entice.Area.Evt.start_link()
     {:ok, _sup} = Entity.Sup.start_link(@map) # Takes a name for the map
     {:ok, _sup} = Entity.Sup.start_link(@map2)
     :ok

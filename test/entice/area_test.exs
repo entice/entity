@@ -15,11 +15,6 @@ defmodule Entice.AreaTest do
     end
   end
 
-  setup_all do
-    {:ok, _sup} = Entice.Area.Sup.start_link
-    :ok
-  end
-
   test "worlds api", _ctx do
     {:ok, TeamArenas} = Area.get_map("TeamArenas")
   end
