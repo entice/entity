@@ -3,6 +3,7 @@ defmodule Entice.Area.Entity do
   Data-only entity built upon an Agent.
   """
   import Map
+  alias Entice.Area
   alias Entice.Area.Entity
   alias Entice.Area.Util.ETSSupervisor
 
@@ -39,7 +40,7 @@ defmodule Entice.Area.Entity do
   @spec start(area, entity_id, Map, list) :: Agent.on_start
   def start(area, entity_id, attributes \\ %{}, opts \\ []) do
     ETSSupervisor.start(area, entity_id, [area, attributes | opts])
-    Entity.Events.entity_added(area, entity_id)
+    Area.Evt.entity_added(area, entity_id)
     {:ok, entity_id}
   end
 
@@ -47,7 +48,7 @@ defmodule Entice.Area.Entity do
   @spec stop(area, entity_id) :: :ok
   def stop(area, entity_id) do
     ETSSupervisor.terminate(area, entity_id)
-    Entity.Events.entity_removed(area, entity_id)
+    Area.Evt.entity_removed(area, entity_id)
     :ok
   end
 
@@ -76,8 +77,8 @@ defmodule Entice.Area.Entity do
   def change_area(area1, area2, entity_id) do
     case ETSSupervisor.lookup(area1, entity_id) do
       {:ok, _e} -> ETSSupervisor.migrate(area1, area2, entity_id)
-      Entity.Events.entity_removed(area1, entity_id)
-      Entity.Events.entity_added(area2, entity_id)
+      Area.Evt.entity_removed(area1, entity_id)
+      Area.Evt.entity_added(area2, entity_id)
       err -> err
     end
   end
@@ -97,7 +98,7 @@ defmodule Entice.Area.Entity do
     case ETSSupervisor.lookup(area, entity_id) do
       {:ok, e} ->
         put_attribute(e, attribute)
-        Entity.Events.attribute_updated(area, entity_id, attribute)
+        Area.Evt.attribute_updated(area, entity_id, attribute)
       err -> err
     end
   end
@@ -118,7 +119,7 @@ defmodule Entice.Area.Entity do
       {:ok, e} ->
         update_attribute(e, attribute_type, fn entity ->
           result = modifier.(entity)
-          Entity.Events.attribute_updated(area, entity_id, result)
+          Area.Evt.attribute_updated(area, entity_id, result)
           result
         end)
       err -> err
@@ -131,7 +132,7 @@ defmodule Entice.Area.Entity do
     case ETSSupervisor.lookup(area, entity_id) do
       {:ok, e} ->
         remove_attribute(e, attribute_type)
-        Entity.Events.attribute_removed(area, entity_id, attribute_type)
+        Area.Evt.attribute_removed(area, entity_id, attribute_type)
       err -> err
     end
   end

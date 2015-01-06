@@ -25,13 +25,13 @@ defmodule Entice.AreaTest do
   end
 
   test "entity api & events", _ctx do
-    GenEvent.add_mon_handler(TeamArenas.Evt, Forwarder, self())
+    GenEvent.add_mon_handler(Area.Evt, Forwarder, self())
 
     {:ok, id} = Entity.start(TeamArenas, UUID.uuid4())
     :ok = Entity.put_attribute(TeamArenas, id, %TestAttr{})
     assert Entity.has_attribute?(TeamArenas, id, TestAttr) == true
 
-    assert_receive {:entity_added, ^id}
-    assert_receive {:attribute_updated, ^id, %TestAttr{}}
+    assert_receive {:entity_added, TeamArenas, ^id}
+    assert_receive {:attribute_updated, TeamArenas, ^id, %TestAttr{}}
   end
 end
