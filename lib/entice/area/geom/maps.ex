@@ -24,12 +24,7 @@ defmodule Entice.Area.Geom.Maps do
 
   defmacro __before_compile__(env) do
     quote do
-      # #adds an alias for all defined maps through using
-      # defmacro __using__(_) do
-      #   quote do
-      #     unquote(for map <- @maps, do: alias unquote(map))
-      #   end
-      # end
+      unquote(inject_using)
 
       @doc """
       Simplistic map getter, tries to convert a map name to the module atom.
@@ -48,6 +43,20 @@ defmodule Entice.Area.Geom.Maps do
   end
 
 
+  def inject_using do
+    quote unquote: false do
+      #adds an alias for all defined maps through using
+      defmacro __using__(_) do
+        quote do
+          unquote(for map <- @maps do
+            quote do: alias unquote(map)
+          end)
+        end
+      end
+    end
+  end
+
+
   defmodule Map do
     @moduledoc """
     This macro puts all common map functions inside the map/area module that uses it
@@ -57,6 +66,7 @@ defmodule Entice.Area.Geom.Maps do
       quote do
         alias Entice.Area.Geom.Coord
 
+        @mod
         unquote(content)
         unquote(supervisor)
       end
@@ -64,10 +74,12 @@ defmodule Entice.Area.Geom.Maps do
 
     defp content do
       quote do
+        unquote underscore
+
         def spawn, do: %Coord{}
         def name, do: __MODULE__
         def underscore_name do
-          unquote(__MODULE__ |> Module.split |> List.last |> to_string |> underscore)
+          name |> Module.split |> List.last |> to_string |> underscore
         end
 
         defoverridable [name: 0, spawn: 0]
@@ -85,13 +97,50 @@ defmodule Entice.Area.Geom.Maps do
       end
     end
 
-    defp underscore(string) do
-      string
-      |> String.to_char_list
-      |> Enum.map(&underscore_char(&1))
-      |> Enum.join("")
+    def underscore(value) when not is_binary(value) do
+      underscore(to_string(value))
     end
-    defp underscore_char(c) when c in ?a..?z, do: to_string(c)
-    defp underscore_char(c) when c in ?A..?Z, do: "_" <> (c |> to_string |> String.downcase)
+
+
+    # Taken from the phoenix framework: https://github.com/phoenixframework/phoenix/blob/master/lib/phoenix/naming.ex#L78
+    def underscore do
+      quote do
+        def underscore(""), do: ""
+        def underscore(<<h, t :: binary>>), do: <<to_lower_char(h)>> <> do_underscore(t, h)
+
+        defp do_underscore(<<h, t, rest :: binary>>, _) when h in ?A..?Z and not t in ?A..?Z do
+          <<?_, to_lower_char(h), t>> <> do_underscore(rest, t)
+        end
+
+        defp do_underscore(<<h, t :: binary>>, prev) when h in ?A..?Z and not prev in ?A..?Z do
+          <<?_, to_lower_char(h)>> <> do_underscore(t, h)
+        end
+
+        defp do_underscore(<<?-, t :: binary>>, _) do
+          <<?_>> <> do_underscore(t, ?-)
+        end
+
+        defp do_underscore(<< "..", t :: binary>>, _) do
+          <<"..">> <> underscore(t)
+        end
+
+        defp do_underscore(<<?.>>, _), do: <<?.>>
+
+        defp do_underscore(<<?., t :: binary>>, _) do
+          <<?/>> <> underscore(t)
+        end
+
+        defp do_underscore(<<h, t :: binary>>, _) do
+          <<to_lower_char(h)>> <> do_underscore(t, h)
+        end
+
+        defp do_underscore(<<>>, _) do
+          <<>>
+        end
+
+        defp to_lower_char(char) when char in ?A..?Z, do: char + 32
+        defp to_lower_char(char), do: char
+      end
+    end
   end
 end
