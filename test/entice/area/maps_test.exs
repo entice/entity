@@ -1,5 +1,5 @@
-defmodule Entice.Area.Geom.MapsTest do
-  use Entice.Area.Geom.Maps
+defmodule Entice.Area.MapsTest do
+  use Entice.Area.Maps
   use ExUnit.Case
 
   defmap SomeMap

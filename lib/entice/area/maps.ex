@@ -1,4 +1,4 @@
-defmodule Entice.Area.Geom.Maps do
+defmodule Entice.Area.Maps do
   @moduledoc """
   Top-level map macros for convenient access to all defined maps.
   Is mainly used in area.ex where all the maps are defined.
@@ -6,10 +6,10 @@ defmodule Entice.Area.Geom.Maps do
 
   defmacro __using__(_) do
     quote do
-      import Entice.Area.Geom.Maps
+      import Entice.Area.Maps
 
       @maps []
-      @before_compile Entice.Area.Geom.Maps
+      @before_compile Entice.Area.Maps
     end
   end
 
@@ -17,12 +17,12 @@ defmodule Entice.Area.Geom.Maps do
   defmacro defmap(mapname) do
     quote do
       @maps [ unquote(mapname) | @maps ]
-      defmodule unquote(mapname), do: use Entice.Area.Geom.Maps.Map
+      defmodule unquote(mapname), do: use Entice.Area.Maps.Map
     end
   end
 
 
-  defmacro __before_compile__(env) do
+  defmacro __before_compile__(_) do
     quote do
       unquote(inject_using)
 
@@ -65,8 +65,6 @@ defmodule Entice.Area.Geom.Maps do
     defmacro __using__(_) do
       quote do
         alias Entice.Area.Geom.Coord
-
-        @mod
         unquote(content)
         unquote(supervisor)
       end
@@ -82,7 +80,7 @@ defmodule Entice.Area.Geom.Maps do
           name |> Module.split |> List.last |> to_string |> underscore
         end
 
-        defoverridable [name: 0, spawn: 0]
+        defoverridable [spawn: 0]
       end
     end
 
@@ -97,14 +95,10 @@ defmodule Entice.Area.Geom.Maps do
       end
     end
 
-    def underscore(value) when not is_binary(value) do
-      underscore(to_string(value))
-    end
-
-
     # Taken from the phoenix framework: https://github.com/phoenixframework/phoenix/blob/master/lib/phoenix/naming.ex#L78
-    def underscore do
+    defp underscore do
       quote do
+        def underscore(value) when not is_binary(value), do: underscore(to_string(value))
         def underscore(""), do: ""
         def underscore(<<h, t :: binary>>), do: <<to_lower_char(h)>> <> do_underscore(t, h)
 

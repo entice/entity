@@ -1,5 +1,8 @@
 defmodule Entice.Area do
-  use Entice.Area.Geom.Maps
+  use Entice.Area.Maps
+
+  # Lobby is used for temporarily storage of account data and characters
+  defmap Lobby
 
   defmap HeroesAscent
   defmap RandomArenas
