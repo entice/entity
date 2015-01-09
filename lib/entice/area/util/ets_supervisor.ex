@@ -90,7 +90,7 @@ defmodule Entice.Area.Util.ETSSupervisor do
       [{^id, other_pid}] ->
         {:reply, {:error, :process_already_registered, other_pid}, name}
       _ ->
-        {:ok, pid} = ETSSupervisor.Spawner.start_child(name.Spawner, id, args)
+        {:ok, pid} = ETSSupervisor.Spawner.start_child(Module.concat(name, Spawner), id, args)
         Process.monitor(pid)
         :ets.insert(name, {id, pid})
         {:reply, pid, name}
@@ -120,7 +120,7 @@ defmodule Entice.Area.Util.ETSSupervisor do
   def handle_call({:terminate, id}, _from, name) do
     case :ets.lookup(name, id) do
       [{^id, _pid}] ->
-        ETSSupervisor.Spawner.terminate_child(name.Spawner, id)
+        ETSSupervisor.Spawner.terminate_child(Module.concat(name, Spawner), id)
         :ets.delete(name, id)
         {:reply, :ok, name}
       _ -> {:reply, :error, name}
@@ -129,7 +129,7 @@ defmodule Entice.Area.Util.ETSSupervisor do
 
   def handle_call(:clear, _from, name) do
     for {id, _pid} <- :ets.tab2list(name) do
-      ETSSupervisor.Spawner.terminate_child(name.Spawner, id)
+      ETSSupervisor.Spawner.terminate_child(Module.concat(name, Spawner), id)
       :ets.delete(name, id)
     end
 
@@ -185,7 +185,7 @@ defmodule Entice.Area.Util.ETSSupervisor.Sup do
   def init({name, spawned}) do
     children = [
       worker(ETSSupervisor, [name, [name: name]]),
-      supervisor(ETSSupervisor.Spawner, [spawned, [name: name.Spawner]])
+      supervisor(ETSSupervisor.Spawner, [spawned, [name: Module.concat(name, Spawner)]])
     ]
     supervise(children, strategy: :one_for_one)
   end

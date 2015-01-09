@@ -45,11 +45,12 @@ defmodule Entice.Area.Sup do
 
   def init(:ok) do
     children = [
-      worker(Entice.Area.Evt, []),
-      supervisor(Entice.Area.HeroesAscent.Sup, []),
-      supervisor(Entice.Area.RandomArenas.Sup, []),
-      supervisor(Entice.Area.TeamArenas.Sup, [])
+      worker(Entice.Area.Evt, []) |
+      for map <- Entice.Area.get_maps do
+        supervisor(Module.concat(map, Sup), [])
+      end
     ]
+
     supervise(children, strategy: :one_for_one)
   end
 end

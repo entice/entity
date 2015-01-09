@@ -16,8 +16,8 @@ defmodule Entice.Area.Maps do
 
   defmacro defmap(mapname) do
     quote do
-      @maps [ unquote(mapname) | @maps ]
       defmodule unquote(mapname), do: use Entice.Area.Maps.Map
+      @maps [ unquote(mapname) | @maps ]
     end
   end
 
@@ -55,86 +55,86 @@ defmodule Entice.Area.Maps do
       end
     end
   end
+end
 
 
-  defmodule Map do
-    @moduledoc """
-    This macro puts all common map functions inside the map/area module that uses it
-    """
+defmodule Entice.Area.Maps.Map do
+  @moduledoc """
+  This macro puts all common map functions inside the map/area module that uses it
+  """
 
-    defmacro __using__(_) do
-      quote do
-        alias Entice.Area.Geom.Coord
-        unquote(content)
-        unquote(supervisor)
-      end
+  defmacro __using__(_) do
+    quote do
+      alias Entice.Area.Geom.Coord
+      unquote(content)
+      unquote(supervisor)
     end
+  end
 
-    defp content do
-      quote do
-        unquote underscore
+  defp content do
+    quote do
+      unquote underscore
 
-        def spawn, do: %Coord{}
-        def name, do: __MODULE__
-        def underscore_name do
-          name |> Module.split |> List.last |> to_string |> underscore
-        end
-
-        defoverridable [spawn: 0]
+      def spawn, do: %Coord{}
+      def name, do: __MODULE__
+      def underscore_name do
+        name |> Module.split |> List.last |> to_string |> underscore
       end
+
+      defoverridable [spawn: 0]
     end
+  end
 
-    defp supervisor do
-      quote do
-        sup_name = Module.concat(__MODULE__, "Sup")
-        sup_contents = quote do
-          def start_link, do: Entice.Area.Entity.Sup.start_link(unquote(__MODULE__))
-        end
-
-        Module.create(sup_name, sup_contents, Macro.Env.location(__ENV__))
+  defp supervisor do
+    quote do
+      sup_name = Module.concat(__MODULE__, "Sup")
+      sup_contents = quote do
+        def start_link, do: Entice.Area.Entity.Sup.start_link(unquote(__MODULE__))
       end
+
+      Module.create(sup_name, sup_contents, Macro.Env.location(__ENV__))
     end
+  end
 
-    # Taken from the phoenix framework: https://github.com/phoenixframework/phoenix/blob/master/lib/phoenix/naming.ex#L78
-    defp underscore do
-      quote do
-        def underscore(value) when not is_binary(value), do: underscore(to_string(value))
-        def underscore(""), do: ""
-        def underscore(<<h, t :: binary>>), do: <<to_lower_char(h)>> <> do_underscore(t, h)
+  # Taken from the phoenix framework: https://github.com/phoenixframework/phoenix/blob/master/lib/phoenix/naming.ex#L78
+  defp underscore do
+    quote do
+      def underscore(value) when not is_binary(value), do: underscore(to_string(value))
+      def underscore(""), do: ""
+      def underscore(<<h, t :: binary>>), do: <<to_lower_char(h)>> <> do_underscore(t, h)
 
-        defp do_underscore(<<h, t, rest :: binary>>, _) when h in ?A..?Z and not t in ?A..?Z do
-          <<?_, to_lower_char(h), t>> <> do_underscore(rest, t)
-        end
-
-        defp do_underscore(<<h, t :: binary>>, prev) when h in ?A..?Z and not prev in ?A..?Z do
-          <<?_, to_lower_char(h)>> <> do_underscore(t, h)
-        end
-
-        defp do_underscore(<<?-, t :: binary>>, _) do
-          <<?_>> <> do_underscore(t, ?-)
-        end
-
-        defp do_underscore(<< "..", t :: binary>>, _) do
-          <<"..">> <> underscore(t)
-        end
-
-        defp do_underscore(<<?.>>, _), do: <<?.>>
-
-        defp do_underscore(<<?., t :: binary>>, _) do
-          <<?/>> <> underscore(t)
-        end
-
-        defp do_underscore(<<h, t :: binary>>, _) do
-          <<to_lower_char(h)>> <> do_underscore(t, h)
-        end
-
-        defp do_underscore(<<>>, _) do
-          <<>>
-        end
-
-        defp to_lower_char(char) when char in ?A..?Z, do: char + 32
-        defp to_lower_char(char), do: char
+      defp do_underscore(<<h, t, rest :: binary>>, _) when h in ?A..?Z and not t in ?A..?Z do
+        <<?_, to_lower_char(h), t>> <> do_underscore(rest, t)
       end
+
+      defp do_underscore(<<h, t :: binary>>, prev) when h in ?A..?Z and not prev in ?A..?Z do
+        <<?_, to_lower_char(h)>> <> do_underscore(t, h)
+      end
+
+      defp do_underscore(<<?-, t :: binary>>, _) do
+        <<?_>> <> do_underscore(t, ?-)
+      end
+
+      defp do_underscore(<< "..", t :: binary>>, _) do
+        <<"..">> <> underscore(t)
+      end
+
+      defp do_underscore(<<?.>>, _), do: <<?.>>
+
+      defp do_underscore(<<?., t :: binary>>, _) do
+        <<?/>> <> underscore(t)
+      end
+
+      defp do_underscore(<<h, t :: binary>>, _) do
+        <<to_lower_char(h)>> <> do_underscore(t, h)
+      end
+
+      defp do_underscore(<<>>, _) do
+        <<>>
+      end
+
+      defp to_lower_char(char) when char in ?A..?Z, do: char + 32
+      defp to_lower_char(char), do: char
     end
   end
 end
