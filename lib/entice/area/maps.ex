@@ -66,20 +66,17 @@ defmodule Entice.Area.Maps.Map do
   defmacro __using__(_) do
     quote do
       alias Entice.Area.Geom.Coord
-      unquote(content)
+      unquote(content(__CALLER__.module))
       unquote(supervisor)
     end
   end
 
-  defp content do
+  defp content(mod) do
+    umod = mod |> Module.split |> List.last |> to_string |> underscore
     quote do
-      unquote underscore
-
       def spawn, do: %Coord{}
       def name, do: __MODULE__
-      def underscore_name do
-        name |> Module.split |> List.last |> to_string |> underscore
-      end
+      def underscore_name, do: unquote(umod)
 
       defoverridable [spawn: 0]
     end
@@ -97,44 +94,40 @@ defmodule Entice.Area.Maps.Map do
   end
 
   # Taken from the phoenix framework: https://github.com/phoenixframework/phoenix/blob/master/lib/phoenix/naming.ex#L78
-  defp underscore do
-    quote do
-      def underscore(value) when not is_binary(value), do: underscore(to_string(value))
-      def underscore(""), do: ""
-      def underscore(<<h, t :: binary>>), do: <<to_lower_char(h)>> <> do_underscore(t, h)
+  def underscore(value) when not is_binary(value), do: underscore(to_string(value))
+  def underscore(""), do: ""
+  def underscore(<<h, t :: binary>>), do: <<to_lower_char(h)>> <> do_underscore(t, h)
 
-      defp do_underscore(<<h, t, rest :: binary>>, _) when h in ?A..?Z and not t in ?A..?Z do
-        <<?_, to_lower_char(h), t>> <> do_underscore(rest, t)
-      end
-
-      defp do_underscore(<<h, t :: binary>>, prev) when h in ?A..?Z and not prev in ?A..?Z do
-        <<?_, to_lower_char(h)>> <> do_underscore(t, h)
-      end
-
-      defp do_underscore(<<?-, t :: binary>>, _) do
-        <<?_>> <> do_underscore(t, ?-)
-      end
-
-      defp do_underscore(<< "..", t :: binary>>, _) do
-        <<"..">> <> underscore(t)
-      end
-
-      defp do_underscore(<<?.>>, _), do: <<?.>>
-
-      defp do_underscore(<<?., t :: binary>>, _) do
-        <<?/>> <> underscore(t)
-      end
-
-      defp do_underscore(<<h, t :: binary>>, _) do
-        <<to_lower_char(h)>> <> do_underscore(t, h)
-      end
-
-      defp do_underscore(<<>>, _) do
-        <<>>
-      end
-
-      defp to_lower_char(char) when char in ?A..?Z, do: char + 32
-      defp to_lower_char(char), do: char
-    end
+  defp do_underscore(<<h, t, rest :: binary>>, _) when h in ?A..?Z and not t in ?A..?Z do
+    <<?_, to_lower_char(h), t>> <> do_underscore(rest, t)
   end
+
+  defp do_underscore(<<h, t :: binary>>, prev) when h in ?A..?Z and not prev in ?A..?Z do
+    <<?_, to_lower_char(h)>> <> do_underscore(t, h)
+  end
+
+  defp do_underscore(<<?-, t :: binary>>, _) do
+    <<?_>> <> do_underscore(t, ?-)
+  end
+
+  defp do_underscore(<< "..", t :: binary>>, _) do
+    <<"..">> <> underscore(t)
+  end
+
+  defp do_underscore(<<?.>>, _), do: <<?.>>
+
+  defp do_underscore(<<?., t :: binary>>, _) do
+    <<?/>> <> underscore(t)
+  end
+
+  defp do_underscore(<<h, t :: binary>>, _) do
+    <<to_lower_char(h)>> <> do_underscore(t, h)
+  end
+
+  defp do_underscore(<<>>, _) do
+    <<>>
+  end
+
+  defp to_lower_char(char) when char in ?A..?Z, do: char + 32
+  defp to_lower_char(char), do: char
 end
