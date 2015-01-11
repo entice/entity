@@ -4,6 +4,9 @@ defmodule Entice.Area do
   # Lobby is used for temporarily storage of account data and characters
   defmap Lobby
 
+  # Transfer is for entities that undergo a map-change
+  defmap Transfer
+
   defmap HeroesAscent
   defmap RandomArenas
   defmap TeamArenas
