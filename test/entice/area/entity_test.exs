@@ -61,12 +61,10 @@ defmodule Entice.Area.EntityTest do
 
   test "attribute updateing", %{entity: entity_id} do
     {:ok, %TestAttr1{}} = Entity.get_attribute(@map, entity_id, TestAttr1)
-    Entity.update_attribute(@map, entity_id, TestAttr1, fn _ -> %TestAttr1{foo: 42} end)
-    {:ok, %TestAttr1{foo: 42}} = Entity.get_attribute(@map, entity_id, TestAttr1)
+    {:ok, %TestAttr1{foo: 42}} = Entity.update_attribute(@map, entity_id, TestAttr1, fn _ -> %TestAttr1{foo: 42} end)
 
     :error = Entity.get_attribute(@map, entity_id, TestAttr2)
-    Entity.update_attribute(@map, entity_id, TestAttr2, fn _ -> %TestAttr2{baz: true} end)
-    :error = Entity.get_attribute(@map, entity_id, TestAttr2)
+    :error = Entity.update_attribute(@map, entity_id, TestAttr2, fn _ -> %TestAttr2{baz: true} end)
   end
 
 

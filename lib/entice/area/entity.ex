@@ -113,15 +113,16 @@ defmodule Entice.Area.Entity do
   end
 
 
-  @spec update_attribute(area, entity_id,  attribute_type, (any -> any)) :: :ok | {:error, term}
+  @spec update_attribute(area, entity_id,  attribute_type, (any -> any)) :: {:ok, any} | {:error, term}
   def update_attribute(area, entity_id, attribute_type, modifier) do
     case ETSSupervisor.lookup(area, entity_id) do
       {:ok, e} ->
-        update_attribute(e, attribute_type, fn entity ->
-          result = modifier.(entity)
-          Area.Evt.attribute_updated(area, entity_id, result)
-          result
-        end)
+        case update_attribute(e, attribute_type, modifier) do
+          {:ok, a} = res ->
+            Area.Evt.attribute_updated(area, entity_id, a)
+            res
+          err -> err
+        end
       err -> err
     end
   end
@@ -167,6 +168,7 @@ defmodule Entice.Area.Entity do
         state
       end
     end)
+    get_attribute(entity, attribute_type)
   end
 
   defp remove_attribute(entity, attribute_type) do
