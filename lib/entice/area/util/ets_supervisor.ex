@@ -41,30 +41,6 @@ defmodule Entice.Area.Util.ETSSupervisor do
   end
 
   @doc """
-  Tries to move a worker from one table to another.
-  Might fail with an exception if the worker doesnt exist.
-  """
-  def migrate(name1, name2, id) do
-    {:ok, ^id, pid} = pop(name1, id)
-    inject(name2, id, pid)
-  end
-
-  @doc """
-  Inject an already existing worker into a table.
-  """
-  def inject(name, id, pid) do
-    GenServer.call(name, {:inject, id, pid})
-  end
-
-  @doc """
-  Tries to pop a worker from the table.
-  Can fail with an error if the worker does not exist.
-  """
-  def pop(name, id) do
-    GenServer.call(name, {:pop, id})
-  end
-
-  @doc """
   Kills a worker if it exists. Does nothing otherwise.
   """
   def terminate(name, id) do
@@ -94,26 +70,6 @@ defmodule Entice.Area.Util.ETSSupervisor do
         Process.monitor(pid)
         :ets.insert(name, {id, pid})
         {:reply, pid, name}
-    end
-  end
-
-  def handle_call({:inject, id, pid}, _from, name) do
-    case :ets.lookup(name, id) do
-      [{^id, other_pid}] ->
-        {:reply, {:error, :process_already_registered, other_pid}, name}
-      _ ->
-        Process.monitor(pid)
-        :ets.insert(name, {id, pid})
-        {:reply, {:ok, pid}, name}
-    end
-  end
-
-  def handle_call({:pop, id}, _from, name) do
-    case :ets.lookup(name, id) do
-      [{^id, pid}] ->
-        :ets.delete(name, id)
-        {:reply, {:ok, id, pid}, name}
-      _ -> {:reply, :error, name}
     end
   end
 

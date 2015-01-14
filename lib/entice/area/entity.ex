@@ -73,18 +73,6 @@ defmodule Entice.Area.Entity do
   end
 
 
-  @spec change_area(area, area, entity_id) :: :ok | {:error, term}
-  def change_area(area1, area2, entity_id) do
-    case ETSSupervisor.lookup(area1, entity_id) do
-      {:ok, _e} ->
-        ETSSupervisor.migrate(area1, area2, entity_id)
-        Area.Evt.entity_removed(area1, entity_id)
-        Area.Evt.entity_added(area2, entity_id)
-      err -> err
-    end
-  end
-
-
   @spec has_attribute?(area, entity_id, attribute_type) :: boolean | {:error, term}
   def has_attribute?(area, entity_id, attribute_type) do
     case ETSSupervisor.lookup(area, entity_id) do

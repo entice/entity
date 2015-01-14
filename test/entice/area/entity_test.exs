@@ -25,15 +25,6 @@ defmodule Entice.Area.EntityTest do
   end
 
 
-  test "map change", %{entity: entity_id} do
-    assert Entity.exists?(@map, entity_id) == true
-    assert Entity.exists?(@map2, entity_id) == false
-    Entity.change_area(@map, @map2, entity_id)
-    assert Entity.exists?(@map, entity_id) == false
-    assert Entity.exists?(@map2, entity_id) == true
-  end
-
-
   test "entity dump", %{entity: entity_id} do
     {:ok, entity_id2} = Entity.start(@map, UUID.uuid4(), %{TestAttr2 => %TestAttr2{}})
     dump = Entity.get_entity_dump(@map)

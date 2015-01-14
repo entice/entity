@@ -29,10 +29,5 @@ defmodule Entice.AreaTest do
 
     assert_receive {:entity_added, TeamArenas, ^id}
     assert_receive {:attribute_updated, TeamArenas, ^id, %TestAttr{}}
-
-    # change map
-    Entity.change_area(TeamArenas, RandomArenas, id)
-    assert_receive {:entity_removed, TeamArenas, ^id}
-    assert_receive {:entity_added, RandomArenas, ^id}
   end
 end
