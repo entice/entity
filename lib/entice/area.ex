@@ -20,8 +20,8 @@ defmodule Entice.Area.Evt do
 
   def start_link, do: GenEvent.start_link([name: __MODULE__])
 
-  def entity_added(area, entity_id) do
-    GenEvent.notify(__MODULE__, {:entity_added, area, entity_id})
+  def entity_added(area, entity_id, attributes) do
+    GenEvent.notify(__MODULE__, {:entity_added, area, entity_id, attributes})
   end
 
   def entity_removed(area, entity_id) do

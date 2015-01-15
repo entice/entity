@@ -27,7 +27,7 @@ defmodule Entice.AreaTest do
     :ok = Entity.put_attribute(TeamArenas, id, %TestAttr{})
     assert Entity.has_attribute?(TeamArenas, id, TestAttr) == true
 
-    assert_receive {:entity_added, TeamArenas, ^id}
+    assert_receive {:entity_added, TeamArenas, ^id, %{}}
     assert_receive {:attribute_updated, TeamArenas, ^id, %TestAttr{}}
   end
 end

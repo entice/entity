@@ -40,7 +40,7 @@ defmodule Entice.Area.Entity do
   @spec start(area, entity_id, Map, list) :: Agent.on_start
   def start(area, entity_id, attributes \\ %{}, opts \\ []) do
     ETSSupervisor.start(area, entity_id, [area, attributes | opts])
-    Area.Evt.entity_added(area, entity_id)
+    Area.Evt.entity_added(area, entity_id, attributes)
     {:ok, entity_id}
   end
 
