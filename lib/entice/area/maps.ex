@@ -73,11 +73,12 @@ defmodule Entice.Area.Maps.Map do
   end
 
   defp content(mod) do
-    umod = underscore(mod |> Module.split |> List.last)
+    name = mod |> Module.split |> List.last |> to_string
+    uname = underscore(name)
     quote do
       def spawn, do: %Coord{}
-      def name, do: __MODULE__
-      def underscore_name, do: unquote(umod)
+      def name, do: unquote(name)
+      def underscore_name, do: unquote(uname)
 
       defoverridable [spawn: 0]
     end

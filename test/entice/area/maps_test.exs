@@ -21,7 +21,7 @@ defmodule Entice.Area.MapsTest do
 
 
   test "map name" do
-    assert SomeMap.name == SomeMap
+    assert SomeMap.name == "SomeMap"
   end
 
   test "map underscore name" do
