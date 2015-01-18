@@ -8,12 +8,8 @@ defmodule Entice.Area.Mixfile do
      deps: deps]
   end
 
-  #def application do
-  #  [applications: [:logger],
-  #   mod: {Entice.Area, []}]
-  #end
-
   defp deps do
-    [{:uuid, "~> 0.1.5"}]
+    [{:uuid, "~> 0.1.5"},
+     {:inflex, "~> 0.2.5"}]
   end
 end

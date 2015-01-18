@@ -62,6 +62,7 @@ defmodule Entice.Area.Maps.Map do
   @moduledoc """
   This macro puts all common map functions inside the map/area module that uses it
   """
+  import Inflex
 
   defmacro __using__(_) do
     quote do
@@ -72,7 +73,7 @@ defmodule Entice.Area.Maps.Map do
   end
 
   defp content(mod) do
-    umod = mod |> Module.split |> List.last |> to_string |> underscore
+    umod = underscore(mod |> Module.split |> List.last)
     quote do
       def spawn, do: %Coord{}
       def name, do: __MODULE__
@@ -92,42 +93,4 @@ defmodule Entice.Area.Maps.Map do
       Module.create(sup_name, sup_contents, Macro.Env.location(__ENV__))
     end
   end
-
-  # Taken from the phoenix framework: https://github.com/phoenixframework/phoenix/blob/master/lib/phoenix/naming.ex#L78
-  def underscore(value) when not is_binary(value), do: underscore(to_string(value))
-  def underscore(""), do: ""
-  def underscore(<<h, t :: binary>>), do: <<to_lower_char(h)>> <> do_underscore(t, h)
-
-  defp do_underscore(<<h, t, rest :: binary>>, _) when h in ?A..?Z and not t in ?A..?Z do
-    <<?_, to_lower_char(h), t>> <> do_underscore(rest, t)
-  end
-
-  defp do_underscore(<<h, t :: binary>>, prev) when h in ?A..?Z and not prev in ?A..?Z do
-    <<?_, to_lower_char(h)>> <> do_underscore(t, h)
-  end
-
-  defp do_underscore(<<?-, t :: binary>>, _) do
-    <<?_>> <> do_underscore(t, ?-)
-  end
-
-  defp do_underscore(<< "..", t :: binary>>, _) do
-    <<"..">> <> underscore(t)
-  end
-
-  defp do_underscore(<<?.>>, _), do: <<?.>>
-
-  defp do_underscore(<<?., t :: binary>>, _) do
-    <<?/>> <> underscore(t)
-  end
-
-  defp do_underscore(<<h, t :: binary>>, _) do
-    <<to_lower_char(h)>> <> do_underscore(t, h)
-  end
-
-  defp do_underscore(<<>>, _) do
-    <<>>
-  end
-
-  defp to_lower_char(char) when char in ?A..?Z, do: char + 32
-  defp to_lower_char(char), do: char
 end
