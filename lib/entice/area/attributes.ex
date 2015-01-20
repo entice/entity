@@ -16,7 +16,11 @@ defmodule Entice.Area.Attributes do
 
   defmodule Position, do: defstruct(pos: %Coord{})
 
-  defmodule Movement, do: defstruct(goal: %Coord{}, movetype: 9, speed: 1.0)
+  defmodule Movement, do: defstruct(
+    goal: %Coord{},
+    plane: 1,
+    movetype: 9,
+    speed: 1.0)
 
   defmodule Appearance, do: defstruct(
     profession: 1,
