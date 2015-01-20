@@ -3,9 +3,11 @@ defmodule Entice.Area.Maps do
   Top-level map macros for convenient access to all defined maps.
   Is mainly used in area.ex where all the maps are defined.
   """
+  use Entice.Area.Attributes
 
   defmacro __using__(_) do
     quote do
+      use Entice.Area.Attributes
       import Entice.Area.Maps
 
       @maps []
@@ -14,9 +16,14 @@ defmodule Entice.Area.Maps do
   end
 
 
-  defmacro defmap(mapname) do
+  defmacro defmap(mapname, opts \\ []) do
+    spawn = Keyword.get(opts, :spawn, quote do %Coord{} end)
+
     quote do
-      defmodule unquote(mapname), do: use Entice.Area.Maps.Map
+      defmodule unquote(mapname) do
+        use Entice.Area.Maps.Map
+        def spawn, do: unquote(spawn)
+      end
       @maps [ unquote(mapname) | @maps ]
     end
   end

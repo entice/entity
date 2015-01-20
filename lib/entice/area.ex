@@ -7,9 +7,9 @@ defmodule Entice.Area do
   # Transfer is for entities that undergo a map-change
   defmap Transfer
 
-  defmap HeroesAscent
-  defmap RandomArenas
-  defmap TeamArenas
+  defmap HeroesAscent, spawn: %Coord{x: 2017, y: -3241}
+  defmap RandomArenas, spawn: %Coord{x: 3854, y: 3874}
+  defmap TeamArenas,   spawn: %Coord{x: -1873, y: 352}
 end
 
 
