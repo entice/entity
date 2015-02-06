@@ -1,6 +1,6 @@
-[![Build Status](https://travis-ci.org/entice/area.svg)](https://travis-ci.org/entice/area)
+[![Build Status](https://travis-ci.org/entice/entity.svg)](https://travis-ci.org/entice/entity)
 
-Entice.Area
+Entice.Entity
 ========
 
-Serves areas. Areas are event-driven entity-systems.
+Serves entities. Entities have an ID and can store Attributes.
