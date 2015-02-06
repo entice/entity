@@ -8,9 +8,14 @@ defmodule Entice.Entity do
     attributes: %{})
 
 
+  # Entity lifecycle & retrieval API
+
+
+  def start, do: start(UUID.uuid4())
+
   def start(entity_id, attributes \\ %{}, opts \\ []) do
-    ETSSupervisor.start(__MODULE__.Supervisor, entity_id, [attributes | opts])
-    {:ok, entity_id}
+    {:ok, pid} = ETSSupervisor.start(__MODULE__.Supervisor, entity_id, [attributes | opts])
+    {:ok, entity_id, pid}
   end
 
 
@@ -26,42 +31,29 @@ defmodule Entice.Entity do
   end
 
 
-  def has_attribute?(entity_id, attribute_type) do
-    case ETSSupervisor.lookup(__MODULE__.Supervisor, entity_id) do
-      {:ok, e} -> GenServer.call(e, {:has_attribute, attribute_type})
-      err      -> err
-    end
-  end
+  def fetch(entity_id),
+  do: ETSSupervisor.lookup(__MODULE__.Supervisor, entity_id)
 
 
-  def fetch_attribute(entity_id, attribute_type) do
-    case ETSSupervisor.lookup(__MODULE__.Supervisor, entity_id) do
-      {:ok, e} -> GenServer.call(e, {:fetch_attribute, attribute_type})
-      err      -> err
-    end
-  end
+  # Entity internal API
 
 
-  def put_attribute(entity_id, attribute) do
-    case ETSSupervisor.lookup(__MODULE__.Supervisor, entity_id) do
-      {:ok, e} -> GenServer.cast(e, {:put_attribute, attribute})
-      err      -> err
-    end
-  end
+  def has_attribute?(entity, attribute_type),
+  do: GenServer.call(entity, {:has_attribute, attribute_type})
 
 
-  def update_attribute(entity_id, attribute_type, modifier) do
-    case ETSSupervisor.lookup(__MODULE__.Supervisor, entity_id) do
-      {:ok, e} -> GenServer.cast(e, {:update_attribute, attribute_type, modifier})
-      err      -> err
-    end
-  end
+  def fetch_attribute(entity, attribute_type),
+  do: GenServer.call(entity, {:fetch_attribute, attribute_type})
 
 
-  def remove_attribute(entity_id, attribute_type) do
-    case ETSSupervisor.lookup(__MODULE__.Supervisor, entity_id) do
-      {:ok, e} -> GenServer.cast(e, {:remove_attribute, attribute_type})
-      err      -> err
-    end
-  end
+  def put_attribute(entity, attribute),
+  do: GenServer.cast(entity, {:put_attribute, attribute})
+
+
+  def update_attribute(entity, attribute_type, modifier),
+  do: GenServer.cast(entity, {:update_attribute, attribute_type, modifier})
+
+
+  def remove_attribute(entity, attribute_type),
+  do: GenServer.cast(entity, {:remove_attribute, attribute_type})
 end
