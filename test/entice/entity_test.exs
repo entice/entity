@@ -24,6 +24,14 @@ defmodule Entice.EntityTest do
   end
 
 
+  test "entity termination", %{entity_id: entity_id, entity: pid} do
+    {:ok, id1, pid1} = Entity.start(UUID.uuid4(), %{TestAttr1 => %TestAttr1{}})
+    assert {:ok, ^pid1} = Entity.fetch(id1)
+    Entity.stop(id1)
+    assert {:error, _} = Entity.fetch(id1)
+  end
+
+
   test "attribute adding", %{entity_id: _entity_id, entity: pid} do
     Entity.put_attribute(pid, %TestAttr2{})
     assert Entity.has_attribute?(pid, TestAttr2) == true
