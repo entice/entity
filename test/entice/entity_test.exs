@@ -6,11 +6,6 @@ defmodule Entice.EntityTest do
   defmodule TestAttr2, do: defstruct baz: false
 
 
-  setup_all do
-    {:ok, _sup} = Entity.Supervisor.start_link()
-    :ok
-  end
-
   setup do
     # Create a new entity: Choose an ID and attribute set
     {:ok, entity_id, pid} = Entity.start(UUID.uuid4(), %{TestAttr1 => %TestAttr1{}})
@@ -24,7 +19,7 @@ defmodule Entice.EntityTest do
   end
 
 
-  test "entity termination", %{entity_id: entity_id, entity: pid} do
+  test "entity termination", %{entity_id: _entity_id, entity: _pid} do
     {:ok, id1, pid1} = Entity.start(UUID.uuid4(), %{TestAttr1 => %TestAttr1{}})
     assert {:ok, ^pid1} = Entity.fetch(id1)
     Entity.stop(id1)

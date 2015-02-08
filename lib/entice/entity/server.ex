@@ -4,6 +4,7 @@ defmodule Entice.Entity.Server do
   """
   use GenServer
   alias Entice.Entity
+  alias Entice.Entity.Behaviour
   import Map
 
 
@@ -15,6 +16,9 @@ defmodule Entice.Entity.Server do
 
 
   def init(%Entity{} = state), do: {:ok, state}
+
+
+  # attribute server
 
 
   def handle_call({:has_attribute, attr_type}, _from, %Entity{attributes: attrs} = state),
@@ -45,5 +49,24 @@ defmodule Entice.Entity.Server do
   do: {:noreply, %Entity{state | attributes: attrs |> delete(attr_type)}}
 
 
+  # behaviour server
+
+
+  def handle_cast({:put_behaviour, behaviour, args}, %Entity{behaviour_manager: manager} = state),
+  do: {:noreply, %Entity{state | behaviour_manager: Behaviour.Manager.put_handler(manager, behaviour, args)}}
+
+
+  def handle_cast({:remove_behaviour, behaviour}, %Entity{behaviour_manager: manager, attributes: attrs} = state) do
+    {:ok, man, attr} = Behaviour.Manager.remove_handler(manager, behaviour, attrs)
+    {:noreply, %Entity{state | behaviour_manager: man, attributes: attr}}
+  end
+
+
   def handle_cast(msg, state), do: super(msg, state)
+
+
+  def handle_info(event, %Entity{behaviour_manager: manager, attributes: attrs} = state) do
+    {man, attr} = Behaviour.Manager.notify(manager, event, attrs)
+    {:noreply, %Entity{state | behaviour_manager: man, attributes: attr}}
+  end
 end
