@@ -9,17 +9,20 @@ defmodule Entice.Entity.BehaviourTest do
 
   defmodule TestBehaviour do
     use Behaviour
+    alias Entice.Entity.BehaviourTest.TestAttr1
 
-    def init(test_pid), do: {:ok, {:some_state, test_pid}}
+
+    def init(attrs, test_pid),
+    do: {:ok, Map.put(attrs, TestAttr1, %TestAttr1{}), {:some_state, test_pid}}
 
 
-    def handle_event({:bar, _event}, attributes, {:some_state, test_pid} = state) do
+    def handle_event({:bar, _event}, %{TestAttr1 => _} = attributes, {:some_state, test_pid} = state) do
       send(test_pid, {:got, :bar})
       {:ok, attributes, state}
     end
 
 
-    def handle_event({:add, %{__struct__: attr_type} = attr}, attributes, {:some_state, test_pid} = state) do
+    def handle_event({:add, %{__struct__: attr_type} = attr}, %{TestAttr1 => _} = attributes, {:some_state, test_pid} = state) do
       send(test_pid, {:got, :add})
       {:ok, Map.put(attributes, attr_type, attr), state}
     end
@@ -27,20 +30,21 @@ defmodule Entice.Entity.BehaviourTest do
 
     def terminate(reason, attributes, {:some_state, test_pid}) do
       send(test_pid, {:got, :terminate, reason})
-      {:ok, attributes}
+      {:ok, Map.delete(attributes, TestAttr1)}
     end
   end
 
 
   setup do
     # Create a new entity: Choose an ID and attribute set
-    {:ok, _id, pid} = Entity.start(UUID.uuid4(), %{TestAttr1 => %TestAttr1{}})
+    {:ok, _id, pid} = Entity.start
     {:ok, [entity: pid]}
   end
 
 
   test "behaviour adding & event reaction", %{entity: pid} do
     Entity.put_behaviour(pid, TestBehaviour, self)
+    assert Entity.has_attribute?(pid, TestAttr1) == true
 
     # send normal event
     send(pid, {:bar, :some_event})
@@ -76,6 +80,8 @@ defmodule Entice.Entity.BehaviourTest do
 
     Entity.remove_behaviour(pid, TestBehaviour)
     assert_receive {:got, :terminate, :remove_handler}
+
+    assert Entity.has_attribute?(pid, TestAttr1) == false
 
     # send normal event, now shouldnt respond
     send(pid, {:bar, :existence_check})

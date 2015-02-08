@@ -64,7 +64,7 @@ defmodule Entice.Entity do
 
 
   def put_behaviour(entity, behaviour, args) when is_atom(behaviour),
-  do: GenServer.cast(entity, {:put_behaviour, behaviour, [args]})
+  do: GenServer.cast(entity, {:put_behaviour, behaviour, args})
 
 
   def remove_behaviour(entity, behaviour) when is_atom(behaviour),

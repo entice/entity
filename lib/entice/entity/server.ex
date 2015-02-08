@@ -52,8 +52,10 @@ defmodule Entice.Entity.Server do
   # behaviour server
 
 
-  def handle_cast({:put_behaviour, behaviour, args}, %Entity{behaviour_manager: manager} = state),
-  do: {:noreply, %Entity{state | behaviour_manager: Behaviour.Manager.put_handler(manager, behaviour, args)}}
+  def handle_cast({:put_behaviour, behaviour, args}, %Entity{behaviour_manager: manager, attributes: attrs} = state) do
+    {:ok, man, attr} = Behaviour.Manager.put_handler(manager, behaviour, attrs, args)
+    {:noreply, %Entity{state | behaviour_manager: man, attributes: attr}}
+  end
 
 
   def handle_cast({:remove_behaviour, behaviour}, %Entity{behaviour_manager: manager, attributes: attrs} = state) do
@@ -66,7 +68,7 @@ defmodule Entice.Entity.Server do
 
 
   def handle_info(event, %Entity{behaviour_manager: manager, attributes: attrs} = state) do
-    {man, attr} = Behaviour.Manager.notify(manager, event, attrs)
+    {:ok, man, attr} = Behaviour.Manager.notify(manager, event, attrs)
     {:noreply, %Entity{state | behaviour_manager: man, attributes: attr}}
   end
 end
