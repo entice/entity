@@ -3,4 +3,4 @@
 Entice.Entity
 ========
 
-Serves entities. Entities have an ID and can store Attributes.
+Serves entities. Entities have an ID and can store attributes and behaviours.
