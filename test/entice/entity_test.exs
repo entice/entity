@@ -27,15 +27,25 @@ defmodule Entice.EntityTest do
   end
 
 
-  test "sending messages to an entity-id", %{entity_id: entity_id, entity: pid} do
-    assert :something = Entity.notify(entity_id, :something)
+  test "entity notification", %{entity_id: _entity_id, entity: pid} do
     assert :something = Entity.notify(pid, :something)
+  end
+
+
+  test "entity notification w/ id", %{entity_id: entity_id, entity: _pid} do
+    assert :something = Entity.notify(entity_id, :something)
   end
 
 
   test "attribute adding", %{entity_id: _entity_id, entity: pid} do
     Entity.put_attribute(pid, %TestAttr2{})
     assert Entity.has_attribute?(pid, TestAttr2) == true
+  end
+
+
+  test "attribute adding w/ id", %{entity_id: entity_id, entity: _pid} do
+    Entity.put_attribute(entity_id, %TestAttr2{})
+    assert Entity.has_attribute?(entity_id, TestAttr2) == true
   end
 
 
@@ -50,7 +60,18 @@ defmodule Entice.EntityTest do
   end
 
 
-  test "attribute updateing", %{entity_id: _entity_id, entity: pid} do
+  test "attribute retrieval w/ id", %{entity_id: entity_id, entity: _pid} do
+    {:ok, %TestAttr1{}} = Entity.fetch_attribute(entity_id, TestAttr1)
+    assert :error = Entity.fetch_attribute(entity_id, TestAttr2)
+
+    Entity.put_attribute(entity_id, %TestAttr2{})
+
+    assert {:ok, %TestAttr1{}} = Entity.fetch_attribute(entity_id, TestAttr1)
+    assert {:ok, %TestAttr2{}} = Entity.fetch_attribute(entity_id, TestAttr2)
+  end
+
+
+  test "attribute updating", %{entity_id: _entity_id, entity: pid} do
     assert {:ok, %TestAttr1{}} = Entity.fetch_attribute(pid, TestAttr1)
     Entity.update_attribute(pid, TestAttr1, fn _ -> %TestAttr1{foo: 42} end)
     assert {:ok, %TestAttr1{foo: 42}} = Entity.fetch_attribute(pid, TestAttr1)
@@ -61,9 +82,27 @@ defmodule Entice.EntityTest do
   end
 
 
+  test "attribute updating w/ id", %{entity_id: entity_id, entity: _pid} do
+    assert {:ok, %TestAttr1{}} = Entity.fetch_attribute(entity_id, TestAttr1)
+    Entity.update_attribute(entity_id, TestAttr1, fn _ -> %TestAttr1{foo: 42} end)
+    assert {:ok, %TestAttr1{foo: 42}} = Entity.fetch_attribute(entity_id, TestAttr1)
+
+    assert :error = Entity.fetch_attribute(entity_id, TestAttr2)
+    Entity.update_attribute(entity_id, TestAttr2, fn _ -> %TestAttr2{baz: true} end)
+    assert :error = Entity.fetch_attribute(entity_id, TestAttr2)
+  end
+
+
   test "attribute removal", %{entity_id: _entity_id, entity: pid} do
     assert Entity.has_attribute?(pid, TestAttr1) == true
     Entity.remove_attribute(pid, TestAttr1)
     assert Entity.has_attribute?(pid, TestAttr1) == false
+  end
+
+
+  test "attribute removal w/ id", %{entity_id: entity_id, entity: _pid} do
+    assert Entity.has_attribute?(entity_id, TestAttr1) == true
+    Entity.remove_attribute(entity_id, TestAttr1)
+    assert Entity.has_attribute?(entity_id, TestAttr1) == false
   end
 end
