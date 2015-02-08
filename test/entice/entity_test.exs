@@ -27,6 +27,12 @@ defmodule Entice.EntityTest do
   end
 
 
+  test "sending messages to an entity-id", %{entity_id: entity_id, entity: pid} do
+    assert :something = Entity.notify(entity_id, :something)
+    assert :something = Entity.notify(pid, :something)
+  end
+
+
   test "attribute adding", %{entity_id: _entity_id, entity: pid} do
     Entity.put_attribute(pid, %TestAttr2{})
     assert Entity.has_attribute?(pid, TestAttr2) == true

@@ -37,6 +37,15 @@ defmodule Entice.Entity do
   do: ETSSupervisor.lookup(__MODULE__.Supervisor, entity_id)
 
 
+  def notify(entity, message) when is_pid(entity), do: send(entity, message)
+  def notify(entity_id, message) do
+    case ETSSupervisor.lookup(__MODULE__.Supervisor, entity_id) do
+      {:ok, e} -> send(e, message)
+      _        -> :error
+    end
+  end
+
+
   # Entity internal attribute API
 
 
