@@ -5,8 +5,8 @@ defmodule Entice.Entity.Behaviour.Manager do
   def init, do: %{}
 
 
-  def put_handler(manager, behaviour, attributes, args \\ []) when is_atom(behaviour) do
-    {:ok, new_attr, state} = Behaviour.init(behaviour, attributes, args)
+  def put_handler(manager, behaviour, entity_id, attributes, args \\ []) when is_atom(behaviour) do
+    {:ok, new_attr, state} = Behaviour.init(behaviour, entity_id, attributes, args)
     {:ok, manager |> put(behaviour, state), new_attr}
   end
 

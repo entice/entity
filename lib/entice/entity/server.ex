@@ -52,8 +52,8 @@ defmodule Entice.Entity.Server do
   # behaviour server
 
 
-  def handle_cast({:put_behaviour, behaviour, args}, %Entity{behaviour_manager: manager, attributes: attrs} = state) do
-    {:ok, man, attr} = Behaviour.Manager.put_handler(manager, behaviour, attrs, args)
+  def handle_cast({:put_behaviour, behaviour, args}, %Entity{id: id, behaviour_manager: manager, attributes: attrs} = state) do
+    {:ok, man, attr} = Behaviour.Manager.put_handler(manager, behaviour, id, attrs, args)
     {:noreply, %Entity{state | behaviour_manager: man, attributes: attr}}
   end
 

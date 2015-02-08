@@ -12,7 +12,7 @@ defmodule Entice.Entity.BehaviourTest do
     alias Entice.Entity.BehaviourTest.TestAttr1
 
 
-    def init(attrs, test_pid),
+    def init(id, attrs, {id, test_pid}),
     do: {:ok, Map.put(attrs, TestAttr1, %TestAttr1{}), {:some_state, test_pid}}
 
 
@@ -37,13 +37,14 @@ defmodule Entice.Entity.BehaviourTest do
 
   setup do
     # Create a new entity: Choose an ID and attribute set
-    {:ok, _id, pid} = Entity.start
+    {:ok, id, pid} = Entity.start
+    Entity.put_behaviour(pid, TestBehaviour, {id, self})
+
     {:ok, [entity: pid]}
   end
 
 
   test "behaviour adding & event reaction", %{entity: pid} do
-    Entity.put_behaviour(pid, TestBehaviour, self)
     assert Entity.has_attribute?(pid, TestAttr1) == true
 
     # send normal event
@@ -61,9 +62,6 @@ defmodule Entice.Entity.BehaviourTest do
 
 
   test "entity state manipulation from behaviour", %{entity: pid} do
-    Entity.put_behaviour(pid, TestBehaviour, self)
-
-    # send normal event
     send(pid, {:add, %TestAttr2{}})
     assert_receive {:got, :add}
 
@@ -72,12 +70,6 @@ defmodule Entice.Entity.BehaviourTest do
 
 
   test "behaviour removal", %{entity: pid} do
-    Entity.put_behaviour(pid, TestBehaviour, self)
-
-    # send normal event
-    send(pid, {:bar, :existence_check})
-    assert_receive {:got, :bar}
-
     Entity.remove_behaviour(pid, TestBehaviour)
     assert_receive {:got, :terminate, :remove_handler}
 

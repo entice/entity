@@ -9,19 +9,19 @@ defmodule Entice.Entity.Behaviour do
 
   defmacro __using__(_) do
     quote do
-      def init(attributes, state), do: {:ok, attributes, state}
+      def init(entity_id, attributes, args), do: {:ok, attributes, args}
 
       def handle_event(event, attributes, state), do: {:ok, attributes, state}
 
       def terminate(_reason, _attributes, _state), do: {:ok, attributes}
 
-      defoverridable [init: 2, handle_event: 3, terminate: 3]
+      defoverridable [init: 3, handle_event: 3, terminate: 3]
     end
   end
 
 
-  def init(behaviour, attributes, state) do
-    apply(behaviour, :init, [attributes, state])
+  def init(behaviour, entity_id, attributes, state) do
+    apply(behaviour, :init, [entity_id, attributes, state])
   end
 
 
