@@ -13,7 +13,7 @@ defmodule Entice.Entity.Behaviour do
 
       def handle_event(event, attributes, state), do: {:ok, attributes, state}
 
-      def terminate(_reason, _attributes, _state), do: {:ok, attributes}
+      def terminate(_reason, attributes, _state), do: {:ok, attributes}
 
       defoverridable [init: 3, handle_event: 3, terminate: 3]
     end

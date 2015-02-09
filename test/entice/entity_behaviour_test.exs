@@ -1,14 +1,19 @@
 defmodule Entice.Entity.BehaviourTest do
   use ExUnit.Case
   alias Entice.Entity
-  alias Entice.Entity.Behaviour
 
   defmodule TestAttr1, do: defstruct foo: 1337, bar: "lol"
   defmodule TestAttr2, do: defstruct baz: false
 
 
+  defmodule CompilationTestBehaviour do
+    use Entice.Entity.Behaviour
+    # test if the compiler can make sense of what the macro produces
+  end
+
+
   defmodule TestBehaviour do
-    use Behaviour
+    use Entice.Entity.Behaviour
     alias Entice.Entity.BehaviourTest.TestAttr1
 
 
