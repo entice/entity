@@ -80,9 +80,13 @@ defmodule Entice.Entity do
   def put_behaviour(entity, behaviour, args) when is_pid(entity) and is_atom(behaviour),
   do: GenServer.cast(entity, {:put_behaviour, behaviour, args})
 
+  def put_behaviour(entity_id, behaviour, args), do: entity_id |> lookup_and_do(&put_behaviour(&1, behaviour, args))
+
 
   def remove_behaviour(entity, behaviour) when is_pid(entity) and is_atom(behaviour),
   do: GenServer.cast(entity, {:remove_behaviour, behaviour})
+
+  def remove_behaviour(entity_id, behaviour), do: entity_id |> lookup_and_do(&remove_behaviour(&1, behaviour))
 
 
   # internal api
