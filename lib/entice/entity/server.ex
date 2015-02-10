@@ -32,35 +32,45 @@ defmodule Entice.Entity.Server do
   def handle_call(msg, from, state), do: super(msg, from, state)
 
 
-  def handle_cast({:put_attribute, %{__struct__: attr_type} = attr}, %Entity{attributes: attrs} = state),
-  do: {:noreply, %Entity{state | attributes: attrs |> put(attr_type, attr)}}
+  def handle_cast({:put_attribute, %{__struct__: attr_type} = attr}, %Entity{attributes: attrs} = state) do
+    new_attrs = attrs |> put(attr_type, attr)
+    notify_attributes_changed(attrs, new_attrs)
+    {:noreply, %Entity{state | attributes: new_attrs}}
+  end
 
 
-  def handle_cast({:update_attribute, attr_type, modifier}, %Entity{attributes: attrs} = state),
-  do: {:noreply,
-    if attrs |> has_key?(attr_type) do
-      %Entity{state | attributes: attrs |> update!(attr_type, modifier)}
-    else
-      state
-    end}
+  def handle_cast({:update_attribute, attr_type, modifier}, %Entity{attributes: attrs} = state) do
+    new_attrs =
+      case attrs |> has_key?(attr_type) do
+        true  -> attrs |> update!(attr_type, modifier)
+        false -> attrs
+      end
+    notify_attributes_changed(attrs, new_attrs)
+    {:noreply, %Entity{state | attributes: new_attrs}}
+  end
 
 
-  def handle_cast({:remove_attribute, attr_type}, %Entity{attributes: attrs} = state),
-  do: {:noreply, %Entity{state | attributes: attrs |> delete(attr_type)}}
+  def handle_cast({:remove_attribute, attr_type}, %Entity{attributes: attrs} = state) do
+    new_attrs = attrs |> delete(attr_type)
+    notify_attributes_changed(attrs, new_attrs)
+    {:noreply, %Entity{state | attributes: new_attrs}}
+  end
 
 
   # behaviour server
 
 
   def handle_cast({:put_behaviour, behaviour, args}, %Entity{id: id, behaviour_manager: manager, attributes: attrs} = state) do
-    {:ok, man, attr} = Behaviour.Manager.put_handler(manager, behaviour, id, attrs, args)
-    {:noreply, %Entity{state | behaviour_manager: man, attributes: attr}}
+    {:ok, man, new_attrs} = Behaviour.Manager.put_handler(manager, behaviour, id, attrs, args)
+    notify_attributes_changed(attrs, new_attrs)
+    {:noreply, %Entity{state | behaviour_manager: man, attributes: new_attrs}}
   end
 
 
   def handle_cast({:remove_behaviour, behaviour}, %Entity{behaviour_manager: manager, attributes: attrs} = state) do
-    {:ok, man, attr} = Behaviour.Manager.remove_handler(manager, behaviour, attrs)
-    {:noreply, %Entity{state | behaviour_manager: man, attributes: attr}}
+    {:ok, man, new_attrs} = Behaviour.Manager.remove_handler(manager, behaviour, attrs)
+    notify_attributes_changed(attrs, new_attrs)
+    {:noreply, %Entity{state | behaviour_manager: man, attributes: new_attrs}}
   end
 
 
@@ -68,7 +78,15 @@ defmodule Entice.Entity.Server do
 
 
   def handle_info(event, %Entity{behaviour_manager: manager, attributes: attrs} = state) do
-    {:ok, man, attr} = Behaviour.Manager.notify(manager, event, attrs)
-    {:noreply, %Entity{state | behaviour_manager: man, attributes: attr}}
+    {:ok, man, new_attrs} = Behaviour.Manager.notify(manager, event, attrs)
+    notify_attributes_changed(attrs, new_attrs)
+    {:noreply, %Entity{state | behaviour_manager: man, attributes: new_attrs}}
   end
+
+
+  # internal API
+
+  defp notify_attributes_changed(old, new) when old == new, do: :ok
+  defp notify_attributes_changed(old, new) when old != new,
+  do: send(self, {:attributes_changed, old, new})
 end

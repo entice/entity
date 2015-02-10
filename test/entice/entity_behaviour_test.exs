@@ -33,6 +33,12 @@ defmodule Entice.Entity.BehaviourTest do
     end
 
 
+    def handle_attributes_changed(%{TestAttr1 => %TestAttr1{foo: 1337}}, %{TestAttr1 => %TestAttr1{foo: 42}} = attributes, {:some_state, test_pid} = state) do
+      send(test_pid, {:got, :attributes_changed})
+      {:ok, attributes, state}
+    end
+
+
     def terminate(reason, attributes, {:some_state, test_pid}) do
       send(test_pid, {:got, :terminate, reason})
       {:ok, Map.delete(attributes, TestAttr1)}
@@ -83,5 +89,14 @@ defmodule Entice.Entity.BehaviourTest do
     # send normal event, now shouldnt respond
     send(pid, {:bar, :existence_check})
     refute_receive {:got, :bar}
+  end
+
+
+  test "notification when attributes changed", %{entity: pid} do
+    assert Entity.has_attribute?(pid, TestAttr1) == true
+    Entity.update_attribute(pid, TestAttr1, fn _ -> %TestAttr1{foo: 42} end)
+    assert {:ok, %TestAttr1{foo: 42}} = Entity.fetch_attribute(pid, TestAttr1)
+
+    assert_receive {:got, :attributes_changed}
   end
 end
