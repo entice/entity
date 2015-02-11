@@ -1,3 +1,3 @@
-%{"entice_utils": {:git, "git://github.com/entice/utils.git", "6808d173dadec1c38dd84ff449d8700669f8fb68", [ref: "6808d173dadec1c38dd84ff449d8700669f8fb68"]},
+%{"entice_utils": {:git, "git://github.com/entice/utils.git", "3150853ee019d0eee44be9baf97e45ca6f0abf68", [ref: "3150853ee019d0eee44be9baf97e45ca6f0abf68"]},
   "inflex": {:hex, :inflex, "0.2.9"},
   "uuid": {:hex, :uuid, "0.1.5"}}
