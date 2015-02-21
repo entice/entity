@@ -56,6 +56,16 @@ defmodule Entice.Entity do
   def fetch_attribute(entity_id, attribute_type), do: entity_id |> lookup_and_do(&fetch_attribute(&1, attribute_type))
 
 
+  def fetch_attribute!(entity, attribute_type) when is_pid(entity) and is_atom(attribute_type) do
+    case GenServer.call(entity, {:fetch_attribute, attribute_type}) do
+      {:ok, value} -> value
+      :error       -> raise KeyError, key: attribute_type, term: entity
+    end
+  end
+
+  def fetch_attribute!(entity_id, attribute_type), do: entity_id |> lookup_and_do(&fetch_attribute!(&1, attribute_type))
+
+
   def put_attribute(entity, %{__struct__: _} = attribute) when is_pid(entity),
   do: GenServer.cast(entity, {:put_attribute, attribute})
 

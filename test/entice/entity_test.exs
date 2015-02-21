@@ -71,6 +71,18 @@ defmodule Entice.EntityTest do
   end
 
 
+  test "attribute retrieval w/ raise", %{entity_id: _entity_id, entity: pid} do
+    %TestAttr1{} = Entity.fetch_attribute!(pid, TestAttr1)
+    assert_raise KeyError, fn -> Entity.fetch_attribute!(pid, TestAttr2) end
+  end
+
+
+  test "attribute retrieval w/ id", %{entity_id: entity_id, entity: _pid} do
+    %TestAttr1{} = Entity.fetch_attribute!(entity_id, TestAttr1)
+    assert_raise KeyError, fn -> Entity.fetch_attribute!(entity_id, TestAttr2) end
+  end
+
+
   test "attribute updating", %{entity_id: _entity_id, entity: pid} do
     assert {:ok, %TestAttr1{}} = Entity.fetch_attribute(pid, TestAttr1)
     Entity.update_attribute(pid, TestAttr1, fn _ -> %TestAttr1{foo: 42} end)

@@ -13,7 +13,7 @@ defmodule Entice.Entity.Behaviour.Manager do
 
   def remove_handler(manager, behaviour, attributes) when is_atom(behaviour) do
     case manager |> fetch(behaviour) do
-      {:error, _}  -> {:ok, manager, attributes}
+      :error       -> {:ok, manager, attributes}
       {:ok, state} ->
         {:ok, new_attr} = Behaviour.terminate(behaviour, :remove_handler, attributes, state)
         {:ok, manager |> delete(behaviour), new_attr}
