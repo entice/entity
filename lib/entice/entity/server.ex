@@ -15,7 +15,10 @@ defmodule Entice.Entity.Server do
   do: GenServer.start_link(__MODULE__, %Entity{id: id, attributes: attributes}, opts)
 
 
-  def init(%Entity{} = state), do: {:ok, state}
+  def init(%Entity{} = state) do
+    Process.flag(:trap_exit, true)
+    {:ok, state}
+  end
 
 
   # attribute server
@@ -81,6 +84,15 @@ defmodule Entice.Entity.Server do
     {:ok, man, new_attrs} = Behaviour.Manager.notify(manager, event, attrs)
     notify_attributes_changed(attrs, new_attrs)
     {:noreply, %Entity{state | behaviour_manager: man, attributes: new_attrs}}
+  end
+
+
+  # termination
+
+
+  def terminate(_reason, %Entity{behaviour_manager: manager, attributes: attrs}) do
+    Behaviour.Manager.remove_all(manager, attrs)
+    :ok
   end
 
 

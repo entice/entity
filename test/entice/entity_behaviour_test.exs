@@ -51,7 +51,7 @@ defmodule Entice.Entity.BehaviourTest do
     {:ok, id, pid} = Entity.start
     Entity.put_behaviour(pid, TestBehaviour, {id, self})
 
-    {:ok, [entity: pid]}
+    {:ok, [entity: pid, entity_id: id]}
   end
 
 
@@ -98,5 +98,15 @@ defmodule Entice.Entity.BehaviourTest do
     assert {:ok, %TestAttr1{foo: 42}} = Entity.fetch_attribute(pid, TestAttr1)
 
     assert_receive {:got, :attributes_changed}
+  end
+
+
+  test "behaviour terminated when entity terminates", %{entity: pid, entity_id: id} do
+    Entity.stop(id)
+    assert_receive {:got, :terminate, :remove_handler}
+
+    # send normal event, now shouldnt respond
+    send(pid, {:bar, :existence_check})
+    refute_receive {:got, :bar}
   end
 end

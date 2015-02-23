@@ -21,9 +21,18 @@ defmodule Entice.Entity.Behaviour.Manager do
   end
 
 
+  def remove_all(manager, attributes),
+  do: remove_all_internal(keys(manager), manager, attributes)
+
+  defp remove_all_internal([], manager, attributes), do: {:ok, manager, attributes}
+  defp remove_all_internal([behaviour | _], manager, attributes) do
+    {:ok, new_manager, new_attr} = remove_handler(manager, behaviour, attributes)
+    remove_all(new_manager, new_attr)
+  end
+
+
   def notify(manager, event, attributes),
   do: notify_internal(manager |> to_list, manager, event, attributes)
-
 
   defp notify_internal([], new_manager, _event, attributes), do: {:ok, new_manager, attributes}
   defp notify_internal([{behaviour, state} | t], new_manager, event, attributes) do
