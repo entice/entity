@@ -56,6 +56,7 @@ defmodule Entice.Entity.BehaviourTest do
 
 
   test "behaviour adding & event reaction", %{entity: pid} do
+    assert Entity.has_behaviour?(pid, TestBehaviour) == true
     assert Entity.has_attribute?(pid, TestAttr1) == true
 
     # send normal event
@@ -84,6 +85,7 @@ defmodule Entice.Entity.BehaviourTest do
     Entity.remove_behaviour(pid, TestBehaviour)
     assert_receive {:got, :terminate, :remove_handler}
 
+    assert Entity.has_behaviour?(pid, TestBehaviour) == false
     assert Entity.has_attribute?(pid, TestAttr1) == false
 
     # send normal event, now shouldnt respond

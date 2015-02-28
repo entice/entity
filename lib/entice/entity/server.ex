@@ -21,7 +21,7 @@ defmodule Entice.Entity.Server do
   end
 
 
-  # attribute server
+  # Attribute calls
 
 
   def handle_call({:has_attribute, attr_type}, _from, %Entity{attributes: attrs} = state),
@@ -32,7 +32,17 @@ defmodule Entice.Entity.Server do
   do: {:reply, attrs |> fetch(attr_type), state}
 
 
+  # Behaviour calls
+
+
+  def handle_call({:has_behaviour, behaviour}, _from, %Entity{behaviour_manager: manager} = state),
+  do: {:reply, Behaviour.Manager.has_handler?(manager, behaviour), state}
+
+
   def handle_call(msg, from, state), do: super(msg, from, state)
+
+
+  # Attribute casts
 
 
   def handle_cast({:put_attribute, %{__struct__: attr_type} = attr}, %Entity{attributes: attrs} = state) do
@@ -60,7 +70,7 @@ defmodule Entice.Entity.Server do
   end
 
 
-  # behaviour server
+  # Behaviour casts
 
 
   def handle_cast({:put_behaviour, behaviour, args}, %Entity{id: id, behaviour_manager: manager, attributes: attrs} = state) do
@@ -80,6 +90,9 @@ defmodule Entice.Entity.Server do
   def handle_cast(msg, state), do: super(msg, state)
 
 
+  # General message handling
+
+
   def handle_info(event, %Entity{behaviour_manager: manager, attributes: attrs} = state) do
     {:ok, man, new_attrs} = Behaviour.Manager.notify(manager, event, attrs)
     notify_attributes_changed(attrs, new_attrs)
@@ -87,7 +100,7 @@ defmodule Entice.Entity.Server do
   end
 
 
-  # termination
+  # Termination
 
 
   def terminate(_reason, %Entity{behaviour_manager: manager, attributes: attrs}) do
@@ -96,7 +109,7 @@ defmodule Entice.Entity.Server do
   end
 
 
-  # internal API
+  # Internal API
 
   defp notify_attributes_changed(old, new) when old == new, do: :ok
   defp notify_attributes_changed(old, new) when old != new,

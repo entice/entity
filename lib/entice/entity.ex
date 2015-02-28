@@ -41,7 +41,7 @@ defmodule Entice.Entity do
   def notify(entity_id, message), do: entity_id |> lookup_and_do(&notify(&1, message))
 
 
-  # Entity internal attribute API
+  # Entity attribute API
 
 
   def has_attribute?(entity, attribute_type) when is_pid(entity) and is_atom(attribute_type),
@@ -84,7 +84,13 @@ defmodule Entice.Entity do
   def remove_attribute(entity_id, attribute_type), do: entity_id |> lookup_and_do(&remove_attribute(&1, attribute_type))
 
 
-  # Entity internal behaviour API
+  # Entity behaviour API
+
+
+  def has_behaviour?(entity, behaviour) when is_pid(entity) and is_atom(behaviour),
+  do: GenServer.call(entity, {:has_behaviour, behaviour})
+
+  def has_behaviour?(entity_id, behaviour), do: entity_id |> lookup_and_do(&has_behaviour?(&1, behaviour))
 
 
   def put_behaviour(entity, behaviour, args) when is_pid(entity) and is_atom(behaviour),
@@ -99,7 +105,7 @@ defmodule Entice.Entity do
   def remove_behaviour(entity_id, behaviour), do: entity_id |> lookup_and_do(&remove_behaviour(&1, behaviour))
 
 
-  # internal api
+  # Internal
 
   defp lookup_and_do(entity_id, fun) do
     case ETSSupervisor.lookup(__MODULE__.Supervisor, entity_id) do
