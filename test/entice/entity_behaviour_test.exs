@@ -15,33 +15,60 @@ defmodule Entice.Entity.BehaviourTest do
   defmodule TestBehaviour do
     use Entice.Entity.Behaviour
     alias Entice.Entity.BehaviourTest.TestAttr1
+    alias Entice.Entity.BehaviourTest.TestBehaviour2
 
 
     def init(id, attrs, {id, test_pid}),
-    do: {:ok, Map.put(attrs, TestAttr1, %TestAttr1{}), {:some_state, test_pid}}
+    do: {:ok, Map.put(attrs, TestAttr1, %TestAttr1{}), %{entity_id: id, some_state: test_pid}}
 
 
-    def handle_event({:bar, _event}, %{TestAttr1 => _} = attributes, {:some_state, test_pid} = state) do
+    def handle_event({:bar, _event}, %{TestAttr1 => _} = attributes, %{some_state: test_pid} = state) do
       send(test_pid, {:got, :bar})
       {:ok, attributes, state}
     end
 
 
-    def handle_event({:add, %{__struct__: attr_type} = attr}, %{TestAttr1 => _} = attributes, {:some_state, test_pid} = state) do
+    def handle_event({:add, %{__struct__: attr_type} = attr}, %{TestAttr1 => _} = attributes, %{some_state: test_pid} = state) do
       send(test_pid, {:got, :add})
       {:ok, Map.put(attributes, attr_type, attr), state}
     end
 
 
-    def handle_attributes_changed(%{TestAttr1 => %TestAttr1{foo: 1337}}, %{TestAttr1 => %TestAttr1{foo: 42}} = attributes, {:some_state, test_pid} = state) do
+    def handle_event(:become, %{TestAttr1 => _} = attributes, %{entity_id: id, some_state: test_pid} = state) do
+      send(test_pid, {:got, :become})
+      {:become, TestBehaviour2, {id, test_pid}, attributes, state}
+    end
+
+
+    def handle_event(:stop, %{TestAttr1 => _} = attributes, %{some_state: test_pid} = state) do
+      send(test_pid, {:got, :stop})
+      {:stop, :some_reason, attributes, state}
+    end
+
+
+    def handle_change(%{TestAttr1 => %TestAttr1{foo: 1337}}, %{TestAttr1 => %TestAttr1{foo: 42}} = attributes, %{some_state: test_pid} = state) do
       send(test_pid, {:got, :attributes_changed})
       {:ok, attributes, state}
     end
 
 
-    def terminate(reason, attributes, {:some_state, test_pid}) do
+    def terminate(reason, attributes, %{some_state: test_pid}) do
       send(test_pid, {:got, :terminate, reason})
       {:ok, Map.delete(attributes, TestAttr1)}
+    end
+  end
+
+
+  defmodule TestBehaviour2 do
+    use Entice.Entity.Behaviour
+    alias Entice.Entity.BehaviourTest.TestAttr2
+
+    def init(id, attrs, {id, test_pid}),
+    do: {:ok, Map.put(attrs, TestAttr2, %TestAttr2{}), {:some_state, test_pid}}
+
+    def handle_event({:bar2, _event}, %{TestAttr2 => _} = attributes, {:some_state, test_pid} = state) do
+      send(test_pid, {:got, :bar2})
+      {:ok, attributes, state}
     end
   end
 
@@ -78,6 +105,35 @@ defmodule Entice.Entity.BehaviourTest do
     assert_receive {:got, :add}
 
     assert Entity.has_attribute?(pid, TestAttr2) == true
+  end
+
+
+  test "becoming", %{entity: pid} do
+    send(pid, :become)
+    assert_receive {:got, :become}
+    assert_receive {:got, :terminate, :remove_handler}
+
+    assert Entity.has_behaviour?(pid, TestBehaviour) == false
+    assert Entity.has_behaviour?(pid, TestBehaviour2) == true
+    assert Entity.has_attribute?(pid, TestAttr1) == false
+    assert Entity.has_attribute?(pid, TestAttr2) == true
+
+    send(pid, {:bar2, :some_event})
+    assert_receive {:got, :bar2}
+  end
+
+
+  test "stopping", %{entity: pid} do
+    send(pid, :stop)
+    assert_receive {:got, :stop}
+    assert_receive {:got, :terminate, :remove_handler}
+
+    assert Entity.has_behaviour?(pid, TestBehaviour) == false
+    assert Entity.has_attribute?(pid, TestAttr1) == false
+
+    # send normal event, now shouldnt respond
+    send(pid, {:bar, :existence_check})
+    refute_receive {:got, :bar}
   end
 
 

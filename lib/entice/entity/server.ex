@@ -74,14 +74,14 @@ defmodule Entice.Entity.Server do
 
 
   def handle_cast({:put_behaviour, behaviour, args}, %Entity{id: id, behaviour_manager: manager, attributes: attrs} = state) do
-    {:ok, man, new_attrs} = Behaviour.Manager.put_handler(manager, behaviour, id, attrs, args)
+    {:ok, man, new_attrs} = Behaviour.Manager.put_handler(id, manager, behaviour, attrs, args)
     notify_attributes_changed(attrs, new_attrs)
     {:noreply, %Entity{state | behaviour_manager: man, attributes: new_attrs}}
   end
 
 
-  def handle_cast({:remove_behaviour, behaviour}, %Entity{behaviour_manager: manager, attributes: attrs} = state) do
-    {:ok, man, new_attrs} = Behaviour.Manager.remove_handler(manager, behaviour, attrs)
+  def handle_cast({:remove_behaviour, behaviour}, %Entity{id: id, behaviour_manager: manager, attributes: attrs} = state) do
+    {:ok, man, new_attrs} = Behaviour.Manager.remove_handler(id, manager, behaviour, attrs)
     notify_attributes_changed(attrs, new_attrs)
     {:noreply, %Entity{state | behaviour_manager: man, attributes: new_attrs}}
   end
@@ -93,8 +93,8 @@ defmodule Entice.Entity.Server do
   # General message handling
 
 
-  def handle_info(event, %Entity{behaviour_manager: manager, attributes: attrs} = state) do
-    {:ok, man, new_attrs} = Behaviour.Manager.notify(manager, event, attrs)
+  def handle_info(event, %Entity{id: id, behaviour_manager: manager, attributes: attrs} = state) do
+    {:ok, man, new_attrs} = Behaviour.Manager.notify(id, manager, event, attrs)
     notify_attributes_changed(attrs, new_attrs)
     {:noreply, %Entity{state | behaviour_manager: man, attributes: new_attrs}}
   end
@@ -103,8 +103,8 @@ defmodule Entice.Entity.Server do
   # Termination
 
 
-  def terminate(_reason, %Entity{behaviour_manager: manager, attributes: attrs}) do
-    Behaviour.Manager.remove_all(manager, attrs)
+  def terminate(_reason, %Entity{id: id, behaviour_manager: manager, attributes: attrs}) do
+    Behaviour.Manager.remove_all(id, manager, attrs)
     :ok
   end
 
