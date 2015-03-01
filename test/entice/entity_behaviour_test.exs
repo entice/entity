@@ -161,7 +161,7 @@ defmodule Entice.Entity.BehaviourTest do
 
   test "behaviour terminated when entity terminates", %{entity: pid, entity_id: id} do
     Entity.stop(id)
-    assert_receive {:got, :terminate, :remove_handler}
+    assert_receive {:got, :terminate, :shutdown}
 
     # send normal event, now shouldnt respond
     send(pid, {:bar, :existence_check})

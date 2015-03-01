@@ -103,8 +103,8 @@ defmodule Entice.Entity.Server do
   # Termination
 
 
-  def terminate(_reason, %Entity{id: id, behaviour_manager: manager, attributes: attrs}) do
-    Behaviour.Manager.remove_all(id, manager, attrs)
+  def terminate(reason, %Entity{id: id, behaviour_manager: manager, attributes: attrs}) do
+    Behaviour.Manager.remove_all(id, manager, attrs, reason)
     :ok
   end
 

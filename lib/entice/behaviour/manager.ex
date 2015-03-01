@@ -17,12 +17,12 @@ defmodule Entice.Entity.Behaviour.Manager do
   end
 
 
-  def remove_handler(entity_id, manager, behaviour, attributes) when is_atom(behaviour) do
+  def remove_handler(entity_id, manager, behaviour, attributes, reason \\ :remove_handler) when is_atom(behaviour) do
     case manager |> fetch(behaviour) do
       :error       -> {:ok, manager, attributes}
       {:ok, state} ->
         {:ok, new_manager, new_attributes} =
-          Behaviour.terminate(behaviour, :remove_handler, attributes, state)
+          Behaviour.terminate(behaviour, reason, attributes, state)
           |> handle_exit_result(entity_id, manager, behaviour)
 
         {:ok, new_manager |> delete(behaviour), new_attributes}
@@ -30,15 +30,15 @@ defmodule Entice.Entity.Behaviour.Manager do
   end
 
 
-  def remove_all(entity_id, manager, attributes),
-  do: remove_all_internal(manager |> keys, entity_id, manager, attributes)
+  def remove_all(entity_id, manager, attributes, reason \\ :remove_handler),
+  do: remove_all_internal(manager |> keys, entity_id, manager, attributes, reason)
 
-  defp remove_all_internal([], _entity_id, manager, attributes),
+  defp remove_all_internal([], _entity_id, manager, attributes, reason),
   do: {:ok, manager, attributes}
 
-  defp remove_all_internal([behaviour | _], entity_id, manager, attributes) do
-    {:ok, new_manager, new_attr} = remove_handler(entity_id, manager, behaviour, attributes)
-    remove_all(entity_id, new_manager, new_attr)
+  defp remove_all_internal([behaviour | _], entity_id, manager, attributes, reason) do
+    {:ok, new_manager, new_attr} = remove_handler(entity_id, manager, behaviour, attributes, reason)
+    remove_all(entity_id, new_manager, new_attr, reason)
   end
 
 
