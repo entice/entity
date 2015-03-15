@@ -30,6 +30,10 @@ defmodule Entice.Entity.Attribute do
   end
 
 
+  def get_and_update(entity, attribute_type, modifier) when is_atom(attribute_type),
+  do: Entity.call(entity, Attribute.Behaviour, {:attribute_get_and_update, attribute_type, modifier})
+
+
   def put(entity, %{__struct__: _} = attribute),
   do: Entity.notify(entity, {:attribute_put, attribute})
 
@@ -64,5 +68,14 @@ defmodule Entice.Entity.Attribute do
 
     def handle_call({:attribute_fetch, attribute_type}, %Entity{attributes: attrs} = state),
     do: {:ok, attrs |> fetch(attribute_type), state}
+
+    def handle_call({:attribute_get_and_update, attribute_type, modifier}, %Entity{attributes: attrs} = state) do
+      new_state =
+        case attrs |> fetch(attribute_type) do
+          {:ok, attr}  -> %{state | attributes: attrs |> put(attribute_type, modifier.(attr))}
+          _            -> state
+        end
+      {:ok, new_state.attributes |> get(attribute_type), new_state}
+    end
   end
 end

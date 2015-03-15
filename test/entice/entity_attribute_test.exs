@@ -37,6 +37,16 @@ defmodule Entice.Entity.AttributeTest do
   end
 
 
+  test "attribute get & update", %{entity: pid} do
+    assert {:ok, %TestAttr1{}} = Attribute.fetch(pid, TestAttr1)
+    assert %TestAttr1{foo: 42} = Attribute.get_and_update(pid, TestAttr1, fn _ -> %TestAttr1{foo: 42} end)
+
+    assert :error = Attribute.fetch(pid, TestAttr2)
+    assert nil = Attribute.get_and_update(pid, TestAttr2, fn _ -> %TestAttr2{baz: true} end)
+    assert :error = Attribute.fetch(pid, TestAttr2)
+  end
+
+
   test "attribute updating", %{entity: pid} do
     assert {:ok, %TestAttr1{}} = Attribute.fetch(pid, TestAttr1)
     Attribute.update(pid, TestAttr1, fn _ -> %TestAttr1{foo: 42} end)
