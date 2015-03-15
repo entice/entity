@@ -20,7 +20,7 @@ defmodule Entice.Entity.AttributeTest do
   end
 
 
-  test "attribute retrieval", %{entity: pid} do
+  test "attribute fetching", %{entity: pid} do
     {:ok, %TestAttr1{}} = Attribute.fetch(pid, TestAttr1)
     assert :error = Attribute.fetch(pid, TestAttr2)
 
@@ -31,7 +31,18 @@ defmodule Entice.Entity.AttributeTest do
   end
 
 
-  test "attribute retrieval w/ raise", %{entity: pid} do
+  test "attribute getting", %{entity: pid} do
+    %TestAttr1{} = Attribute.get(pid, TestAttr1)
+    assert nil = Attribute.get(pid, TestAttr2)
+
+    Attribute.put(pid, %TestAttr2{})
+
+    assert %TestAttr1{} = Attribute.get(pid, TestAttr1)
+    assert %TestAttr2{} = Attribute.get(pid, TestAttr2)
+  end
+
+
+  test "attribute fetching w/ raise", %{entity: pid} do
     %TestAttr1{} = Attribute.fetch!(pid, TestAttr1)
     assert_raise KeyError, fn -> Attribute.fetch!(pid, TestAttr2) end
   end

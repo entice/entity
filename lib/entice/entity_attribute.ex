@@ -1,7 +1,8 @@
 defmodule Entice.Entity.Attribute do
   @moduledoc """
   A convenience behaviour that allows client code to access the
-  entitie's attributes directy.
+  entity's attributes directly. This can be used to avoid
+  re-implementing the same behaviours over and over again.
   """
   alias Entice.Entity
   alias Entice.Entity.Attribute
@@ -30,6 +31,10 @@ defmodule Entice.Entity.Attribute do
   end
 
 
+  def get(entity, attribute_type) when is_atom(attribute_type),
+  do: Entity.call(entity, Attribute.Behaviour, {:attribute_get, attribute_type})
+
+
   def get_and_update(entity, attribute_type, modifier) when is_atom(attribute_type),
   do: Entity.call(entity, Attribute.Behaviour, {:attribute_get_and_update, attribute_type, modifier})
 
@@ -48,34 +53,28 @@ defmodule Entice.Entity.Attribute do
 
   defmodule Behaviour do
     use Entice.Entity.Behaviour
-    import Map
 
-    def handle_event({:attribute_put, attribute}, %Entity{attributes: attrs} = state),
-    do: {:ok, %{state | attributes: attrs |> put(attribute.__struct__, attribute)}}
+    def handle_event({:attribute_put, attribute}, entity),
+    do: {:ok, entity |> put_attribute(attribute)}
 
-    def handle_event({:attribute_update, attribute_type, modifier}, %Entity{attributes: attrs} = state) do
-      case attrs |> fetch(attribute_type) do
-        {:ok, attr}  -> {:ok, %{state | attributes: attrs |> put(attribute_type, modifier.(attr))}}
-        _            -> {:ok, state}
-      end
-    end
+    def handle_event({:attribute_update, attribute_type, modifier}, entity),
+    do: {:ok, entity |> update_attribute(attribute_type, modifier)}
 
-    def handle_event({:attribute_remove, attribute_type}, %Entity{attributes: attrs} = state),
-    do: {:ok, %{state | attributes: attrs |> delete(attribute_type)}}
+    def handle_event({:attribute_remove, attribute_type}, entity),
+    do: {:ok, entity |> remove_attribute(attribute_type)}
 
-    def handle_call({:attribute_has, attribute_type}, %Entity{attributes: attrs} = state),
-    do: {:ok, attrs |> has_key?(attribute_type), state}
+    def handle_call({:attribute_has, attribute_type}, entity),
+    do: {:ok, entity |> has_attribute?(attribute_type), entity}
 
-    def handle_call({:attribute_fetch, attribute_type}, %Entity{attributes: attrs} = state),
-    do: {:ok, attrs |> fetch(attribute_type), state}
+    def handle_call({:attribute_fetch, attribute_type}, entity),
+    do: {:ok, entity |> fetch_attribute(attribute_type), entity}
 
-    def handle_call({:attribute_get_and_update, attribute_type, modifier}, %Entity{attributes: attrs} = state) do
-      new_state =
-        case attrs |> fetch(attribute_type) do
-          {:ok, attr}  -> %{state | attributes: attrs |> put(attribute_type, modifier.(attr))}
-          _            -> state
-        end
-      {:ok, new_state.attributes |> get(attribute_type), new_state}
+    def handle_call({:attribute_get, attribute_type}, entity),
+    do: {:ok, entity |> get_attribute(attribute_type), entity}
+
+    def handle_call({:attribute_get_and_update, attribute_type, modifier}, entity) do
+      new_entity = entity |> update_attribute(attribute_type, modifier)
+      {:ok, new_entity |> get_attribute(attribute_type), new_entity}
     end
   end
 end
