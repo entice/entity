@@ -3,6 +3,7 @@ defmodule Entice.Entity do
   Thin convenience wrapper around a `Entice.Utils.SyncEvent` manager.
   """
   alias Entice.Entity
+  alias Entice.Entity.Attribute
   alias Entice.Utils.ETSSupervisor
   alias Entice.Utils.SyncEvent
 
@@ -22,8 +23,10 @@ defmodule Entice.Entity do
     start(entity_id, attributes |> Enum.into(%{}, fn x -> {x.__struct__, x} end))
   end
 
+  @doc "Starts a new entity with attached attribute management behaviour"
   def start(entity_id, attributes) when is_map(attributes) do
     {:ok, pid} = ETSSupervisor.start(__MODULE__.Supervisor, entity_id, [%Entity{id: entity_id, attributes: attributes}])
+    pid |> Attribute.register
     {:ok, entity_id, pid}
   end
 
@@ -50,6 +53,27 @@ defmodule Entice.Entity do
 
   def call(entity, behaviour, message) when is_pid(entity), do: SyncEvent.call(entity, behaviour, message)
   def call(entity_id, behaviour, message), do: entity_id |> lookup_and_do(&call(&1, behaviour, message))
+
+
+  # Attribute API (delegates to attribute-management behaviour)
+
+
+  def has_attribute?(entity, attribute_type), do: Attribute.has?(entity, attribute_type)
+
+
+  def fetch_attribute(entity, attribute_type), do: Attribute.fetch(entity, attribute_type)
+
+
+  def fetch_attribute!(entity, attribute_type), do: Attribute.fetch!(entity, attribute_type)
+
+
+  def put_attribute(entity, attribute), do: Attribute.put(entity, attribute)
+
+
+  def update_attribute(entity, attribute_type, modifier), do: Attribute.update(entity, attribute_type, modifier)
+
+
+  def remove_attribute(entity, attribute_type), do: Attribute.remove(entity, attribute_type)
 
 
   # Behaviour API

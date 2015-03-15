@@ -10,7 +10,6 @@ defmodule Entice.Entity.AttributeTest do
   setup do
     # Create a new entity: Choose an ID and attribute set
     {:ok, _id, pid} = Entity.start(UUID.uuid4(), [%TestAttr1{}])
-    Attribute.start(pid)
     {:ok, [entity: pid]}
   end
 

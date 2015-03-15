@@ -7,8 +7,11 @@ defmodule Entice.Entity.Attribute do
   alias Entice.Entity.Attribute
 
 
-  def start(entity),
+  def register(entity),
   do: Entity.put_behaviour(entity, Attribute.Behaviour, [])
+
+  def unregister(entity),
+  do: Entity.remove_behaviour(entity, Attribute.Behaviour)
 
 
   def has?(entity, attribute_type) when is_atom(attribute_type),
