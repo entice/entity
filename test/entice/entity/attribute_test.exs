@@ -74,4 +74,16 @@ defmodule Entice.Entity.AttributeTest do
     Attribute.remove(pid, TestAttr1)
     assert Attribute.has?(pid, TestAttr1) == false
   end
+
+
+  test "attribute transaction", %{entity: pid} do
+    assert Attribute.has?(pid, TestAttr1) == true
+    Attribute.transaction(pid, fn attrs ->
+      attrs
+      |> Map.delete(TestAttr1)
+      |> Map.put(TestAttr2, %TestAttr2{})
+    end)
+    assert Attribute.has?(pid, TestAttr1) == false
+    assert Attribute.has?(pid, TestAttr2) == true
+  end
 end

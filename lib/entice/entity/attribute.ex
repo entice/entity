@@ -3,6 +3,8 @@ defmodule Entice.Entity.Attribute do
   A convenience behaviour that allows client code to access the
   entity's attributes directly. This can be used to avoid
   re-implementing the same behaviours over and over again.
+
+  See `Entity` for more information.
   """
   alias Entice.Entity
   alias Entice.Entity.Attribute
@@ -39,6 +41,10 @@ defmodule Entice.Entity.Attribute do
   do: Entity.call(entity, Attribute.Behaviour, {:attribute_get_and_update, attribute_type, modifier})
 
 
+  def transaction(entity, modifier) when is_function(modifier, 1),
+  do: Entity.call(entity, Attribute.Behaviour, {:attribute_transaction, modifier})
+
+
   def put(entity, %{__struct__: _} = attribute),
   do: Entity.notify(entity, {:attribute_put, attribute})
 
@@ -54,15 +60,6 @@ defmodule Entice.Entity.Attribute do
   defmodule Behaviour do
     use Entice.Entity.Behaviour
 
-    def handle_event({:attribute_put, attribute}, entity),
-    do: {:ok, entity |> put_attribute(attribute)}
-
-    def handle_event({:attribute_update, attribute_type, modifier}, entity),
-    do: {:ok, entity |> update_attribute(attribute_type, modifier)}
-
-    def handle_event({:attribute_remove, attribute_type}, entity),
-    do: {:ok, entity |> remove_attribute(attribute_type)}
-
     def handle_call({:attribute_has, attribute_type}, entity),
     do: {:ok, entity |> has_attribute?(attribute_type), entity}
 
@@ -76,5 +73,19 @@ defmodule Entice.Entity.Attribute do
       new_entity = entity |> update_attribute(attribute_type, modifier)
       {:ok, new_entity |> get_attribute(attribute_type), new_entity}
     end
+
+    def handle_call({:attribute_transaction, modifier}, entity) do
+      new_attributes = modifier.(entity.attributes)
+      {:ok, new_attributes, %Entity{entity | attributes: new_attributes}}
+    end
+
+    def handle_event({:attribute_put, attribute}, entity),
+    do: {:ok, entity |> put_attribute(attribute)}
+
+    def handle_event({:attribute_update, attribute_type, modifier}, entity),
+    do: {:ok, entity |> update_attribute(attribute_type, modifier)}
+
+    def handle_event({:attribute_remove, attribute_type}, entity),
+    do: {:ok, entity |> remove_attribute(attribute_type)}
   end
 end

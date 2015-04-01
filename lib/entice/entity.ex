@@ -4,13 +4,12 @@ defmodule Entice.Entity do
   """
   alias Entice.Entity
   alias Entice.Entity.Attribute
+  alias Entice.Entity.AttributeNotify
   alias Entice.Utils.ETSSupervisor
   alias Entice.Utils.SyncEvent
 
 
-  defstruct(
-    id: "",
-    attributes: %{})
+  defstruct id: "", attributes: %{}
 
 
   # Entity lifecycle & retrieval API
@@ -27,6 +26,7 @@ defmodule Entice.Entity do
   def start(entity_id, attributes) when is_map(attributes) do
     {:ok, pid} = ETSSupervisor.start(__MODULE__.Supervisor, entity_id, [%Entity{id: entity_id, attributes: attributes}])
     pid |> Attribute.register
+    pid |> AttributeNotify.register
     {:ok, entity_id, pid}
   end
 
@@ -82,6 +82,13 @@ defmodule Entice.Entity do
   def remove_attribute(entity, attribute_type), do: Attribute.remove(entity, attribute_type)
 
 
+  @doc """
+  Takes a function that takes the entities current attributes and returns new attributes,
+  replaces the entities attributes with these new ones and replies with the new ones.
+  """
+  def attribute_transaction(entity, modifier), do: Attribute.transaction(entity, modifier)
+
+
   # Behaviour API
 
 
@@ -103,7 +110,19 @@ defmodule Entice.Entity do
   def remove_behaviour(entity_id, behaviour), do: entity_id |> lookup_and_do(&remove_behaviour(&1, behaviour))
 
 
+  # Listeners API
+
+
+  def add_attribute_listener(entity, listener_pid) when is_pid(listener_pid),
+  do: AttributeNotify.add_listener(entity, listener_pid)
+
+
+  def remove_attribute_listener(entity, listener_pid) when is_pid(listener_pid),
+  do: AttributeNotify.remove_listener(entity, listener_pid)
+
+
   # Internal
+
 
   defp lookup_and_do(entity_id, fun) do
     case ETSSupervisor.lookup(__MODULE__.Supervisor, entity_id) do
