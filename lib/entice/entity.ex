@@ -113,8 +113,8 @@ defmodule Entice.Entity do
   # Listeners API
 
 
-  def add_attribute_listener(entity, listener_pid) when is_pid(listener_pid),
-  do: AttributeNotify.add_listener(entity, listener_pid)
+  def add_attribute_listener(entity, listener_pid, initial_report \\ true) when is_pid(listener_pid),
+  do: AttributeNotify.add_listener(entity, listener_pid, initial_report)
 
 
   def remove_attribute_listener(entity, listener_pid) when is_pid(listener_pid),

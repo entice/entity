@@ -30,6 +30,44 @@ defmodule Entice.Logic.AttributeNotifyTest do
   end
 
 
+  test "unregister listener", %{entity_id: eid} do
+    assert_receive {:attribute_notification, %{
+      entity_id: ^eid,
+      added: %{
+        TestAttr1 => %TestAttr1{},
+        TestAttr2 => %TestAttr2{}},
+      changed: %{},
+      removed: []}}
+    AttributeNotify.remove_listener(eid, self)
+    Entity.put_attribute(eid, %TestAttr1{foo: 42})
+    refute_receive {:attribute_notification, %{
+      entity_id: ^eid,
+      added: %{},
+      changed: %{TestAttr1 => %TestAttr1{foo: 42}},
+      removed: []}}
+  end
+
+
+  test "register listener w/o initial attribute report", %{entity_id: eid} do
+    assert_receive {:attribute_notification, %{
+      entity_id: ^eid,
+      added: %{
+        TestAttr1 => %TestAttr1{},
+        TestAttr2 => %TestAttr2{}},
+      changed: %{},
+      removed: []}}
+    AttributeNotify.remove_listener(eid, self)
+    AttributeNotify.add_listener(eid, self, initial_report = false)
+    refute_receive {:attribute_notification, %{
+      entity_id: ^eid,
+      added: %{
+        TestAttr1 => %TestAttr1{},
+        TestAttr2 => %TestAttr2{}},
+      changed: %{},
+      removed: []}}
+  end
+
+
   test "change attributes", %{entity_id: eid} do
     Entity.put_attribute(eid, %TestAttr1{foo: 42})
     assert_receive {:attribute_notification, %{

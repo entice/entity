@@ -29,8 +29,8 @@ defmodule Entice.Entity.AttributeNotify do
   do: Entity.remove_behaviour(entity, AttributeNotify.Behaviour)
 
 
-  def add_listener(entity_id, listener_pid),
-  do: Entity.notify(entity_id, {:attribute_add_listener, listener_pid})
+  def add_listener(entity_id, listener_pid, initial_report \\ true),
+  do: Entity.notify(entity_id, {:attribute_add_listener, listener_pid, initial_report})
 
 
   def remove_listener(entity_id, listener_pid),
@@ -45,18 +45,23 @@ defmodule Entice.Entity.AttributeNotify do
 
 
     def handle_event(
-        {:attribute_add_listener, listener_pid},
+        {:attribute_add_listener, listener_pid, initial_report},
         %Entity{id: id, attributes: %{AttributeNotify => %AttributeNotify{listeners: listeners}}} = entity) do
-      listener_pid |> send({:attribute_notification, %{entity_id: id, added: entity.attributes, changed: %{}, removed: []}})
+      if initial_report do
+        listener_pid |> send({:attribute_notification, %{
+          entity_id: id,
+          added: entity.attributes,
+          changed: %{},
+          removed: []}})
+      end
       {:ok, entity |> put_attribute(%AttributeNotify{listeners: [listener_pid | listeners]})}
     end
 
 
     def handle_event(
         {:attribute_remove_listener, listener_pid},
-        %Entity{attributes: %{AttributeNotify => %AttributeNotify{listeners: listeners}}} = entity) do
-      {:ok, entity |> put_attribute(%AttributeNotify{listeners: listeners -- [listener_pid]})}
-    end
+        %Entity{attributes: %{AttributeNotify => %AttributeNotify{listeners: listeners}}} = entity),
+    do: {:ok, entity |> put_attribute(%AttributeNotify{listeners: listeners -- [listener_pid]})}
 
 
 		def handle_change(old_entity, %Entity{id: id, attributes: %{AttributeNotify => %AttributeNotify{listeners: listeners}}} = new_entity) do
