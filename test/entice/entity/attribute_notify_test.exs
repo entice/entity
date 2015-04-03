@@ -57,7 +57,7 @@ defmodule Entice.Logic.AttributeNotifyTest do
       changed: %{},
       removed: []}}
     AttributeNotify.remove_listener(eid, self)
-    AttributeNotify.add_listener(eid, self, initial_report = false)
+    AttributeNotify.add_listener(eid, self, false)
     refute_receive {:attribute_notification, %{
       entity_id: ^eid,
       added: %{
