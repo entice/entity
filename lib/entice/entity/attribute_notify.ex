@@ -4,8 +4,8 @@ defmodule Entice.Entity.AttributeNotify do
   Think of this as a very simple way to avoid having to reimplement behaviours that
   are only listening for state changes of the entity.
 
-	If the entity adds, changes or removes any of its attributes, listeners will
-	be notified with a changeset:
+  If the entity adds, changes or removes any of its attributes, listeners will
+  be notified with a changeset:
 
       {:attribute_notification, %{
         entity_id: "your-entity-id",
@@ -21,7 +21,7 @@ defmodule Entice.Entity.AttributeNotify do
   defstruct listeners: []
 
 
-	def register(entity),
+  def register(entity),
   do: Entity.put_behaviour(entity, AttributeNotify.Behaviour, [])
 
 
@@ -64,11 +64,11 @@ defmodule Entice.Entity.AttributeNotify do
     do: {:ok, entity |> put_attribute(%AttributeNotify{listeners: listeners -- [listener_pid]})}
 
 
-		def handle_change(old_entity, %Entity{id: id, attributes: %{AttributeNotify => %AttributeNotify{listeners: listeners}}} = new_entity) do
+    def handle_change(old_entity, %Entity{id: id, attributes: %{AttributeNotify => %AttributeNotify{listeners: listeners}}} = new_entity) do
       msg = %{entity_id: id} |> Map.merge(diff(old_entity.attributes, new_entity.attributes))
       for listener_pid <- listeners,
       do: listener_pid |> send({:attribute_notification, msg})
-      {:ok, new_entity}
+      :ok
     end
 
 
