@@ -2,6 +2,7 @@ defmodule Entice.Logic.AttributeNotifyTest do
   use ExUnit.Case
   alias Entice.Entity
   alias Entice.Entity.AttributeNotify
+  alias Entice.Entity.Test.Spy
 
   defmodule TestAttr1, do: defstruct foo: 1337, bar: "lol"
   defmodule TestAttr2, do: defstruct baz: false
@@ -110,5 +111,52 @@ defmodule Entice.Logic.AttributeNotifyTest do
       added: %{TestAttr3 => %TestAttr3{}},
       changed: %{TestAttr1 => %TestAttr1{foo: 42}},
       removed: [TestAttr2]}}
+  end
+
+
+  test "should remove the listener when it dies", %{entity_id: eid} do
+    Spy.register(eid)
+    this = self
+
+    proc = spawn(fn ->
+      receive do
+        {:attribute_notification, _msg} ->
+          send this, :got_notification
+          :ok
+      end
+    end)
+    AttributeNotify.add_listener(eid, proc, false)
+
+    assert {:ok, %AttributeNotify{listeners: [^proc, ^this]}} = Entity.fetch_attribute(eid, AttributeNotify)
+
+    Entity.remove_attribute(eid, TestAttr2)
+
+    assert_receive :got_notification
+    assert_receive %{sender: ^eid, event: {:DOWN, _, _, ^proc, _}}
+    assert {:ok, %AttributeNotify{listeners: [^this]}} = Entity.fetch_attribute(eid, AttributeNotify)
+  end
+
+
+  test "Should not report changes to its own attribute", %{entity_id: eid} do
+    assert_receive {:attribute_notification, %{
+      entity_id: ^eid,
+      added: %{
+        TestAttr1 => %TestAttr1{},
+        TestAttr2 => %TestAttr2{}},
+      changed: %{},
+      removed: []}}
+
+    proc = spawn_link(fn ->
+      receive do
+        :not_gonna_happen -> :ok
+      end
+    end)
+    AttributeNotify.add_listener(eid, proc, false)
+
+    refute_receive {:attribute_notification, %{
+      entity_id: ^eid,
+      added: %{},
+      changed: %{AttributeNotify => %AttributeNotify{}},
+      removed: []}}
   end
 end

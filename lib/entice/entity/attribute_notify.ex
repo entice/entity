@@ -4,6 +4,8 @@ defmodule Entice.Entity.AttributeNotify do
   Think of this as a very simple way to avoid having to reimplement behaviours that
   are only listening for state changes of the entity.
 
+  Listener processes are monitored and dead listeners will be removed.
+
   If the entity adds, changes or removes any of its attributes, listeners will
   be notified with a changeset:
 
@@ -54,6 +56,7 @@ defmodule Entice.Entity.AttributeNotify do
           changed: %{},
           removed: []}})
       end
+      Process.monitor(listener_pid)
       {:ok, entity |> put_attribute(%AttributeNotify{listeners: [listener_pid | listeners]})}
     end
 
@@ -64,15 +67,24 @@ defmodule Entice.Entity.AttributeNotify do
     do: {:ok, entity |> put_attribute(%AttributeNotify{listeners: listeners -- [listener_pid]})}
 
 
+    def handle_event(
+        {:DOWN, _ref, _type, listener_pid, _info},
+        %Entity{attributes: %{AttributeNotify => %AttributeNotify{listeners: listeners}}} = entity),
+    do: {:ok, entity |> put_attribute(%AttributeNotify{listeners: listeners -- [listener_pid]})}
+
+
     def handle_change(old_entity, %Entity{id: id, attributes: %{AttributeNotify => %AttributeNotify{listeners: listeners}}} = new_entity) do
       msg = %{entity_id: id} |> Map.merge(diff(old_entity.attributes, new_entity.attributes))
-      for listener_pid <- listeners,
+      for listener_pid <- listeners, not_empty?(msg),
       do: listener_pid |> send({:attribute_notification, msg})
       :ok
     end
 
 
-    defp diff(old_attrs, new_attrs) do
+    defp diff(old_attrs, new_attrs),
+    do: diff_internal(old_attrs |> Map.delete(AttributeNotify), new_attrs |> Map.delete(AttributeNotify))
+
+    defp diff_internal(old_attrs, new_attrs) do
       missing = Map.keys(old_attrs) -- Map.keys(new_attrs)
       {both, added} = Map.split(new_attrs, Map.keys(old_attrs))
       changed =
@@ -83,6 +95,11 @@ defmodule Entice.Entity.AttributeNotify do
             fn key -> {key, new_attrs[key]} end)
         |> Enum.into(%{})
       %{added: added, changed: changed, removed: missing}
+    end
+
+
+    defp not_empty?(%{added: added, changed: changed, removed: removed}) do
+      [added, changed, removed] |> Enum.any?(&(not Enum.empty?(&1)))
     end
   end
 end
