@@ -41,6 +41,10 @@ defmodule Entice.Entity.Attribute do
   do: Entity.call(entity, Attribute.Behaviour, {:attribute_get_and_update, attribute_type, modifier})
 
 
+  def take(entity, attribute_types) when is_list(attribute_types),
+  do: Entity.call(entity, Attribute.Behaviour, {:attribute_take, attribute_types})
+
+
   def transaction(entity, modifier) when is_function(modifier, 1),
   do: Entity.call(entity, Attribute.Behaviour, {:attribute_transaction, modifier})
 
@@ -73,6 +77,9 @@ defmodule Entice.Entity.Attribute do
       new_entity = entity |> update_attribute(attribute_type, modifier)
       {:ok, new_entity |> get_attribute(attribute_type), new_entity}
     end
+
+    def handle_call({:attribute_take, attribute_types}, entity),
+    do: {:ok, entity |> take_attributes(attribute_types), entity}
 
     def handle_call({:attribute_transaction, modifier}, entity) do
       new_attributes = modifier.(entity.attributes)

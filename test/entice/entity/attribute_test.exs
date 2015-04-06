@@ -58,6 +58,14 @@ defmodule Entice.Entity.AttributeTest do
   end
 
 
+  test "attribute take", %{entity: pid} do
+    assert %{TestAttr1 => %TestAttr1{}} = Attribute.take(pid, [TestAttr1, TestAttr2])
+    Attribute.put(pid, %TestAttr2{})
+    assert %{TestAttr1 => %TestAttr1{}, TestAttr2 => %TestAttr2{}} = 
+      Attribute.take(pid, [TestAttr1, TestAttr2])
+  end
+
+
   test "attribute updating", %{entity: pid} do
     assert {:ok, %TestAttr1{}} = Attribute.fetch(pid, TestAttr1)
     Attribute.update(pid, TestAttr1, fn _ -> %TestAttr1{foo: 42} end)

@@ -22,6 +22,9 @@ defmodule Entice.Entity.Behaviour do
       def get_attribute(%Entity{attributes: attrs}, attribute_type) when is_atom(attribute_type),
       do: Map.get(attrs, attribute_type)
 
+      def take_attributes(%Entity{attributes: attrs}, attribute_types) when is_list(attribute_types),
+      do: Map.take(attrs, attribute_types)
+
       def put_attribute(%Entity{attributes: attrs} = entity, %{__struct__: attribute_type} = attribute),
       do: %Entity{entity | attributes: Map.put(attrs, attribute_type, attribute)}
 

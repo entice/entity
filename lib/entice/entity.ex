@@ -73,6 +73,9 @@ defmodule Entice.Entity do
   def get_and_update_attribute(entity, attribute_type, modifier), do: Attribute.get_and_update(entity, attribute_type, modifier)
 
 
+  def take_attributes(entity, attribute_types), do: Attribute.take(entity, attribute_types)
+
+
   def put_attribute(entity, attribute), do: Attribute.put(entity, attribute)
 
 
