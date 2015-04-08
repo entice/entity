@@ -1,6 +1,7 @@
 defmodule Entice.EntityTest do
   use ExUnit.Case
   alias Entice.Entity
+  alias Entice.Entity.Test.Spy
 
   defmodule TestAttr1, do: defstruct foo: 1337, bar: "lol"
   defmodule TestAttr2, do: defstruct baz: false
@@ -34,5 +35,21 @@ defmodule Entice.EntityTest do
 
   test "entity notification w/ id", %{entity_id: entity_id, entity: _pid} do
     assert :ok = Entity.notify(entity_id, :something)
+  end
+
+
+  test "notification of all entities", %{} do
+    {:ok, id1, e1} = Entity.start
+    {:ok, id2, e2} = Entity.start
+    {:ok, id3, e3} = Entity.start
+    Spy.register(e1, self)
+    Spy.register(e2, self)
+    Spy.register(e3, self)
+
+    Entity.notify_all(:test_message)
+
+    assert_receive %{sender: ^id1, event: :test_message}
+    assert_receive %{sender: ^id2, event: :test_message}
+    assert_receive %{sender: ^id3, event: :test_message}
   end
 end

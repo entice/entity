@@ -47,12 +47,20 @@ defmodule Entice.Entity do
   do: ETSSupervisor.lookup(__MODULE__.Supervisor, entity_id)
 
 
+  def call(entity, behaviour, message) when is_pid(entity), do: SyncEvent.call(entity, behaviour, message)
+  def call(entity_id, behaviour, message), do: entity_id |> lookup_and_do(&call(&1, behaviour, message))
+
+
   def notify(entity, message) when is_pid(entity), do: SyncEvent.notify(entity, message)
   def notify(entity_id, message), do: entity_id |> lookup_and_do(&notify(&1, message))
 
 
-  def call(entity, behaviour, message) when is_pid(entity), do: SyncEvent.call(entity, behaviour, message)
-  def call(entity_id, behaviour, message), do: entity_id |> lookup_and_do(&call(&1, behaviour, message))
+  def notify_all(message) do
+    ETSSupervisor.get_all(__MODULE__.Supervisor)
+    |> Enum.each(fn {_id, pid} ->
+        SyncEvent.notify(pid, message)
+      end)
+  end
 
 
   # Attribute API (delegates to attribute-management behaviour)
