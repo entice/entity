@@ -14,7 +14,7 @@ defmodule Entice.Entity.Mixfile do
   end
 
   defp deps do
-    [{:entice_utils, github: "entice/utils", ref: "739a10e6a328582a438c42d01dac9c87af914730"},
+    [{:entice_utils, github: "entice/utils", ref: "50e05ad5852b683ce66d9917b663fc142923bd5d"},
      {:uuid, "~> 1.0"},
      {:inflex, "~> 1.0"}]
   end

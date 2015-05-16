@@ -142,21 +142,3 @@ defmodule Entice.Entity do
     end
   end
 end
-
-
-defmodule Entice.Entity.Server do
-  alias Entice.Entity
-  alias Entice.Utils.SyncEvent
-
-  def start_link(args),
-  do: SyncEvent.start_link(args)
-end
-
-
-defmodule Entice.Entity.Supervisor do
-  alias Entice.Entity
-  alias Entice.Utils.ETSSupervisor
-
-  def start_link,
-  do: ETSSupervisor.Supervisor.start_link(__MODULE__, Entity.Server)
-end

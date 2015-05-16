@@ -1,5 +1,5 @@
 defmodule Entice.Entity.AttributeTest do
-  use ExUnit.Case
+  use ExUnit.Case, async: true
   alias Entice.Entity
   alias Entice.Entity.Attribute
 

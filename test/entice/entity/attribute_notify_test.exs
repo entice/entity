@@ -1,5 +1,5 @@
 defmodule Entice.Logic.AttributeNotifyTest do
-  use ExUnit.Case
+  use ExUnit.Case, async: true
   alias Entice.Entity
   alias Entice.Entity.AttributeNotify
   alias Entice.Entity.Test.Spy

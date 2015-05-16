@@ -1,5 +1,5 @@
 defmodule Entice.Entity.BehaviourTest do
-  use ExUnit.Case
+  use ExUnit.Case, async: true
 
 
   defmodule CompilationTestBehaviour do
