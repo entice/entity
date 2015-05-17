@@ -2,11 +2,12 @@ defmodule Entice.Entity do
   @moduledoc """
   Thin convenience wrapper around a `Entice.Utils.SyncEvent` manager.
   """
+  alias Entice.Utils.ETSSupervisor
+  alias Entice.Utils.SyncEvent
   alias Entice.Entity
   alias Entice.Entity.Attribute
   alias Entice.Entity.AttributeNotify
-  alias Entice.Utils.ETSSupervisor
-  alias Entice.Utils.SyncEvent
+  alias Entice.Entity.Trigger
 
 
   defstruct id: "", attributes: %{}
@@ -27,6 +28,7 @@ defmodule Entice.Entity do
     {:ok, pid} = ETSSupervisor.start(__MODULE__.Supervisor, entity_id, [%Entity{id: entity_id, attributes: attributes}])
     pid |> Attribute.register
     pid |> AttributeNotify.register
+    pid |> Trigger.register
     {:ok, entity_id, pid}
   end
 
