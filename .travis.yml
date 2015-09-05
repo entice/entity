@@ -1,14 +1,20 @@
 language: erlang
+sudo: false
+
 otp_release:
-- 17.1
+- 17.5
+
 before_install:
-- wget http://s3.hex.pm/builds/elixir/v1.0.2.zip
-- unzip -d elixir v1.0.2.zip
+- wget http://s3.hex.pm/builds/elixir/v1.0.4.zip
+- unzip -d elixir v1.0.4.zip
+
 before_script:
 - export PATH=`pwd`/elixir/bin:$PATH
 - mix local.hex --force
 - mix deps.get
+
 script:
 - MIX_ENV=test mix test
+
 notifications:
   irc: irc.rizon.net#gwlpr

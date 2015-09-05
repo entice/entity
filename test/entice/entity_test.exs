@@ -1,5 +1,5 @@
 defmodule Entice.EntityTest do
-  use ExUnit.Case
+  use ExUnit.Case, async: true
   alias Entice.Entity
   alias Entice.Entity.Test.Spy
 
