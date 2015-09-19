@@ -18,8 +18,8 @@ defmodule Entice.Entity.Coordination do
   def start(), do: :pg2.create(__MODULE__)
 
 
-  def register_entity(entity_id) when not is_pid(entity_id), do: register_entity(Entity.fetch!(entity_id))
-  def register_entity(entity) do
+  def register(entity_id) when not is_pid(entity_id), do: register(Entity.fetch!(entity_id))
+  def register(entity) do
     :pg2.join(__MODULE__, entity)
     Entity.put_behaviour(entity, Coordination.Behaviour, [])
   end
@@ -34,33 +34,32 @@ defmodule Entice.Entity.Coordination do
   # Internal API
 
 
-  def notify_join(entity_id, %{} = attributes) when not is_pid(entity_id),
-  do: notify_internal(entity_id, :entity_join, attributes)
+  @doc "This might fail silently. This is because entities might have died by the time we message them"
+  def notify(entity, message) when is_pid(entity), do: send(entity, message)
+  def notify(nil, message),                        do: {:error, :entity_nil}
+  def notify(entity_id, message),                  do: notify(Entity.get(entity_id), message)
 
 
-  def notify_change(entity_id, {%{}, %{}, %{}} = attributes) when not is_pid(entity_id),
-  do: notify_internal(entity_id, :entity_change, attributes)
-
-
-  def notify_leave(entity_id, %{} = attributes) when not is_pid(entity_id),
-  do: notify_internal(entity_id, :entity_leave, attributes)
-
-
-  def notify_observe(pid) when is_pid(pid),
-  do: notify_internal(pid, :observer_join, nil)
-
-
-  defp notify_internal(entity, event, attributes) do
+  def notify_all(message) do
     :pg2.get_members(__MODULE__) |> Enum.map(
-      fn pid -> send pid, prepare_message(entity, event, attributes) end)
+      fn pid -> send(pid, message) end)
   end
 
 
-  defp prepare_message(entity, event, {added, changed, removed}),
-  do: {event, %{entity_id: entity, added: added, changed: changed, removed: removed}}
+  def notify_join(entity_id, %{} = attributes) when not is_pid(entity_id),
+  do: notify_all({:entity_join, %{entity_id: entity_id, attributes: attributes}})
 
-  defp prepare_message(entity, event, other),
-  do: {event, %{entity_id: entity, attributes: other}}
+
+  def notify_change(entity_id, {%{} = added, %{} = changed, %{} = removed}) when not is_pid(entity_id),
+  do: notify_all({:entity_change, %{entity_id: entity_id, added: added, changed: changed, removed: removed}})
+
+
+  def notify_leave(entity_id, %{} = attributes) when not is_pid(entity_id),
+  do: notify_all({:entity_leave, %{entity_id: entity_id, attributes: attributes}})
+
+
+  def notify_observe(pid) when is_pid(pid),
+  do: notify_all({:observer_join, %{observer: pid}})
 
 
   # This should be replaced by another process that does the monitoring from the outside,
@@ -77,19 +76,19 @@ defmodule Entice.Entity.Coordination do
 
 
     def handle_event({:entity_join, %{entity_id: sender_entity, attributes: _attrs}}, %Entity{attributes: attribs} = entity) do
-      Entity.notify(sender_entity, {:entity_join, %{entity_id: entity.id, attributes: attribs}}) # announce ourselfes to the new entity
+      Coordination.notify(sender_entity, {:entity_join, %{entity_id: entity.id, attributes: attribs}}) # announce ourselfes to the new entity
       {:ok, entity}
     end
 
-    def handle_event({:observer_join, %{entity_id: sender_pid}}, %Entity{attributes: attribs} = entity) do
-      send sender_pid, {:entity_join, %{entity_id: entity.id, attributes: attribs}} # announce ourselfes to the new observer
+    def handle_event({:observer_join, %{observer: sender_pid}}, %Entity{attributes: attribs} = entity) do
+      send(sender_pid, {:entity_join, %{entity_id: entity.id, attributes: attribs}}) # announce ourselfes to the new observer
       {:ok, entity}
     end
 
 
-    def handle_change(%Entity{attributes: old_attributes}, %Entity{attributes: new_attributes}) do
+    def handle_change(%Entity{attributes: old_attributes}, %Entity{attributes: new_attributes} = entity) do
       change_set = diff(old_attributes, new_attributes)
-      if not_empty?(change_set), do: Coordination.notify_change(self(), change_set)
+      if not_empty?(change_set), do: Coordination.notify_change(entity.id, change_set)
       :ok
     end
 
@@ -103,11 +102,8 @@ defmodule Entice.Entity.Coordination do
     # internal
 
 
-    defp diff(old_attrs, new_attrs),
-    do: diff_internal(old_attrs |> Map.delete(AttributeNotify), new_attrs |> Map.delete(AttributeNotify))
-
-    defp diff_internal(old_attrs, new_attrs) do
-      missing = Map.keys(old_attrs) -- Map.keys(new_attrs)
+    defp diff(old_attrs, new_attrs) do
+      missing = old_attrs |> Map.take(Map.keys(old_attrs) -- Map.keys(new_attrs))
       {both, added} = Map.split(new_attrs, Map.keys(old_attrs))
       changed =
         both

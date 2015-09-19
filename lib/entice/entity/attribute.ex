@@ -6,8 +6,9 @@ defmodule Entice.Entity.Attribute do
 
   See `Entity` for more information.
   """
-  alias Entice.Entity
   alias Entice.Entity.Attribute
+  alias Entice.Entity.Coordination
+  alias Entice.Entity
 
 
   def register(entity),
@@ -18,15 +19,15 @@ defmodule Entice.Entity.Attribute do
 
 
   def has?(entity, attribute_type) when is_atom(attribute_type),
-  do: Entity.call(entity, Attribute.Behaviour, {:attribute_has, attribute_type})
+  do: Entity.call_behaviour(entity, Attribute.Behaviour, {:attribute_has, attribute_type})
 
 
   def fetch(entity, attribute_type) when is_atom(attribute_type),
-  do: Entity.call(entity, Attribute.Behaviour, {:attribute_fetch, attribute_type})
+  do: Entity.call_behaviour(entity, Attribute.Behaviour, {:attribute_fetch, attribute_type})
 
 
   def fetch!(entity, attribute_type) when is_atom(attribute_type) do
-    case Entity.call(entity, Attribute.Behaviour, {:attribute_fetch, attribute_type}) do
+    case Entity.call_behaviour(entity, Attribute.Behaviour, {:attribute_fetch, attribute_type}) do
       {:ok, value} -> value
       :error       -> raise KeyError, key: attribute_type, term: entity
     end
@@ -34,31 +35,31 @@ defmodule Entice.Entity.Attribute do
 
 
   def get(entity, attribute_type) when is_atom(attribute_type),
-  do: Entity.call(entity, Attribute.Behaviour, {:attribute_get, attribute_type})
+  do: Entity.call_behaviour(entity, Attribute.Behaviour, {:attribute_get, attribute_type})
 
 
   def get_and_update(entity, attribute_type, modifier) when is_atom(attribute_type),
-  do: Entity.call(entity, Attribute.Behaviour, {:attribute_get_and_update, attribute_type, modifier})
+  do: Entity.call_behaviour(entity, Attribute.Behaviour, {:attribute_get_and_update, attribute_type, modifier})
 
 
   def take(entity, attribute_types) when is_list(attribute_types),
-  do: Entity.call(entity, Attribute.Behaviour, {:attribute_take, attribute_types})
+  do: Entity.call_behaviour(entity, Attribute.Behaviour, {:attribute_take, attribute_types})
 
 
   def transaction(entity, modifier) when is_function(modifier, 1),
-  do: Entity.call(entity, Attribute.Behaviour, {:attribute_transaction, modifier})
+  do: Entity.call_behaviour(entity, Attribute.Behaviour, {:attribute_transaction, modifier})
 
 
   def put(entity, %{__struct__: _} = attribute),
-  do: Entity.notify(entity, {:attribute_put, attribute})
+  do: Coordination.notify(entity, {:attribute_put, attribute})
 
 
   def update(entity, attribute_type, modifier) when is_atom(attribute_type),
-  do: Entity.notify(entity, {:attribute_update, attribute_type, modifier})
+  do: Coordination.notify(entity, {:attribute_update, attribute_type, modifier})
 
 
   def remove(entity, attribute_type) when is_atom(attribute_type),
-  do: Entity.notify(entity, {:attribute_remove, attribute_type})
+  do: Coordination.notify(entity, {:attribute_remove, attribute_type})
 
 
   defmodule Behaviour do

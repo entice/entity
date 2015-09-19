@@ -2,12 +2,13 @@ defmodule Entice.Entity do
   @moduledoc """
   Thin convenience wrapper around a `Entice.Utils.SyncEvent` manager.
   """
+  alias Entice.Entity.Attribute
+  #alias Entice.Entity.AttributeNotify
+  alias Entice.Entity.Coordination
+  #alias Entice.Entity.Trigger
+  alias Entice.Entity
   alias Entice.Utils.ETSSupervisor
   alias Entice.Utils.SyncEvent
-  alias Entice.Entity
-  alias Entice.Entity.Attribute
-  alias Entice.Entity.AttributeNotify
-  alias Entice.Entity.Trigger
 
 
   defstruct id: "", attributes: %{}
@@ -25,10 +26,18 @@ defmodule Entice.Entity do
 
   @doc "Starts a new entity with attached attribute management behaviour"
   def start(entity_id, attributes) when is_map(attributes) do
-    {:ok, pid} = ETSSupervisor.start(__MODULE__.Supervisor, entity_id, [%Entity{id: entity_id, attributes: attributes}])
+    {:ok, ^entity_id, pid} = start_plain(entity_id, attributes)
     pid |> Attribute.register
-    pid |> AttributeNotify.register
-    pid |> Trigger.register
+    pid |> Coordination.register
+    #pid |> AttributeNotify.register
+    #pid |> Trigger.register
+    {:ok, entity_id, pid}
+  end
+
+
+  @doc "Starts an empty entity (just the ID and process, no attributes, no behaviours, no coordination). Mainly for testing"
+  def start_plain(entity_id \\ UUID.uuid4(), attributes \\ %{}) do
+    {:ok, pid} = ETSSupervisor.start(__MODULE__.Supervisor, entity_id, [%Entity{id: entity_id, attributes: attributes}])
     {:ok, entity_id, pid}
   end
 
@@ -57,19 +66,11 @@ defmodule Entice.Entity do
   end
 
 
-  def call(entity, behaviour, message) when is_pid(entity), do: SyncEvent.call(entity, behaviour, message)
-  def call(entity_id, behaviour, message), do: entity_id |> lookup_and_do(&call(&1, behaviour, message))
-
-
-  def notify(entity, message) when is_pid(entity), do: SyncEvent.notify(entity, message)
-  def notify(entity_id, message), do: entity_id |> lookup_and_do(&notify(&1, message))
-
-
-  def notify_all(message) do
-    ETSSupervisor.get_all(__MODULE__.Supervisor)
-    |> Enum.each(fn {_id, pid} ->
-        SyncEvent.notify(pid, message)
-      end)
+  def get(entity_id) do
+    case ETSSupervisor.lookup(__MODULE__.Supervisor, entity_id) do
+      {:ok, pid} -> pid
+      _          -> nil
+    end
   end
 
 
@@ -113,21 +114,23 @@ defmodule Entice.Entity do
   # Behaviour API
 
 
+  def call_behaviour(entity, behaviour, message) when is_pid(entity) and is_atom(behaviour),
+  do: SyncEvent.call(entity, behaviour, message)
+  def call_behaviour(entity_id, behaviour, message), do: entity_id |> lookup_and_do(&call_behaviour(&1, behaviour, message))
+
+
   def has_behaviour?(entity, behaviour) when is_pid(entity) and is_atom(behaviour),
   do: SyncEvent.has_handler?(entity, behaviour)
-
   def has_behaviour?(entity_id, behaviour), do: entity_id |> lookup_and_do(&has_behaviour?(&1, behaviour))
 
 
   def put_behaviour(entity, behaviour, args) when is_pid(entity) and is_atom(behaviour),
   do: SyncEvent.put_handler(entity, behaviour, args)
-
   def put_behaviour(entity_id, behaviour, args), do: entity_id |> lookup_and_do(&put_behaviour(&1, behaviour, args))
 
 
   def remove_behaviour(entity, behaviour) when is_pid(entity) and is_atom(behaviour),
   do: SyncEvent.remove_handler(entity, behaviour)
-
   def remove_behaviour(entity_id, behaviour), do: entity_id |> lookup_and_do(&remove_behaviour(&1, behaviour))
 
 
