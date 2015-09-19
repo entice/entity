@@ -4,19 +4,24 @@ defmodule Entice.Entity.Coordination do
 
   Your entity will always receive 3 different kinds of messages:
 
-      {:entity_join, entity, %{} = inital_attributes}
-      {:entity_change, entity, %{} = added_attributes, %{} = changed_attributes, %{} = removed_attributes}
-      {:entity_leave, entity, %{} = last_attributes}
+      {:entity_join, %{entity_id: id, attributes: %{} = inital_attributes}}
+      {:entity_change, %{entity_id: id, added: %{} = added_attributes, changed: %{} = changed_attributes, removed: %{} = removed_attributes}}
+      {:entity_leave, %{entity_id: id, attributes: %{} = last_attributes}}
 
   You can also passively observe from a standard process and receive those messages.
   """
+  require Logger
+  alias Entice.Entity.Coordination
+  alias Entice.Entity
+
 
   def start(), do: :pg2.create(__MODULE__)
 
 
-  def register_entity(entity) when is_pid(entity) do
+  def register_entity(entity_id) when not is_pid(entity_id), do: register_entity(Entity.fetch!(entity_id))
+  def register_entity(entity) do
     :pg2.join(__MODULE__, entity)
-    Entity.put_behaviour(Entice.Entity.Coordination.Behaviour)
+    Entity.put_behaviour(entity, Coordination.Behaviour, [])
   end
 
 
@@ -26,27 +31,36 @@ defmodule Entice.Entity.Coordination do
   end
 
 
-  def notify_join(entity, %{} = attributes), do: notify(entity, :entity_join, attributes)
-
-  def notify_change(entity, {%{}, %{}, %{}} = attributes), do: notify(entity, :entity_change, attributes)
-
-  def notify_leave(entity, %{} = attributes), do: notify(entity, :entity_leave, attributes)
-
-  def notify_observe(pid), do: notify(pid, :observer_join, nil)
+  # Internal API
 
 
-  defp notify(entity, event, attributes) when is_pid(entity),
-  do: :pg2.get_members(__MODULE__) |> Enum.each(&(send &1, prepare_message(entity, event, attributes)).())
-  defp notify(entity, event, attributes) do
-    case Entity.fetch(entity) do
-      {:ok, ent} -> notify(ent, event, attributes)
-      _          ->
-    end
+  def notify_join(entity_id, %{} = attributes) when not is_pid(entity_id),
+  do: notify_internal(entity_id, :entity_join, attributes)
+
+
+  def notify_change(entity_id, {%{}, %{}, %{}} = attributes) when not is_pid(entity_id),
+  do: notify_internal(entity_id, :entity_change, attributes)
+
+
+  def notify_leave(entity_id, %{} = attributes) when not is_pid(entity_id),
+  do: notify_internal(entity_id, :entity_leave, attributes)
+
+
+  def notify_observe(pid) when is_pid(pid),
+  do: notify_internal(pid, :observer_join, nil)
+
+
+  defp notify_internal(entity, event, attributes) do
+    :pg2.get_members(__MODULE__) |> Enum.map(
+      fn pid -> send pid, prepare_message(entity, event, attributes) end)
   end
 
 
-  defp prepare_message(entity, event, {added, changed, removed}), do: {event, entity, added, changed, removed}
-  defp prepare_message(entity, event, other),                     do: {event, entity, other}
+  defp prepare_message(entity, event, {added, changed, removed}),
+  do: {event, %{entity_id: entity, added: added, changed: changed, removed: removed}}
+
+  defp prepare_message(entity, event, other),
+  do: {event, %{entity_id: entity, attributes: other}}
 
 
   # This should be replaced by another process that does the monitoring from the outside,
@@ -54,33 +68,34 @@ defmodule Entice.Entity.Coordination do
   defmodule Behaviour do
     use Entice.Entity.Behaviour
     alias Entice.Entity.Coordination
+    alias Entice.Entity
 
     def init(%Entity{attributes: attribs} = entity, _args) do
-      Coordination.notify_join(self(), attribs)
+      Coordination.notify_join(entity.id, attribs)
       {:ok, entity}
     end
 
 
-    def handle_event({:entity_join, sender_entity, _attrs}, %Entity{attributes: attribs} = entity) do
-      Entity.notify(sender_entity, {:entity_join, entity, attribs}) # announce ourselfes to the new entity
+    def handle_event({:entity_join, %{entity_id: sender_entity, attributes: _attrs}}, %Entity{attributes: attribs} = entity) do
+      Entity.notify(sender_entity, {:entity_join, %{entity_id: entity.id, attributes: attribs}}) # announce ourselfes to the new entity
       {:ok, entity}
     end
 
-    def handle_event({:observer_join, sender_pid, _}, %Entity{attributes: attribs} = entity) do
-      send sender_pid, {:entity_join, entity, attribs} # announce ourselfes to the new observer
+    def handle_event({:observer_join, %{entity_id: sender_pid}}, %Entity{attributes: attribs} = entity) do
+      send sender_pid, {:entity_join, %{entity_id: entity.id, attributes: attribs}} # announce ourselfes to the new observer
       {:ok, entity}
     end
 
 
-    def handle_change(old_entity, new_entity) do
-      change_set = diff(old_entity, new_entity)
+    def handle_change(%Entity{attributes: old_attributes}, %Entity{attributes: new_attributes}) do
+      change_set = diff(old_attributes, new_attributes)
       if not_empty?(change_set), do: Coordination.notify_change(self(), change_set)
       :ok
     end
 
 
     def terminate(_reason, %Entity{attributes: attribs} = entity) do
-      Coordination.notify_leave(self(), attribs)
+      Coordination.notify_leave(entity.id, attribs)
       {:ok, entity}
     end
 

@@ -49,6 +49,14 @@ defmodule Entice.Entity do
   do: ETSSupervisor.lookup(__MODULE__.Supervisor, entity_id)
 
 
+  def fetch!(entity_id) do
+    case ETSSupervisor.lookup(__MODULE__.Supervisor, entity_id) do
+      {:ok, pid} -> pid
+      _          -> raise "Entity not found: #{entity_id}"
+    end
+  end
+
+
   def call(entity, behaviour, message) when is_pid(entity), do: SyncEvent.call(entity, behaviour, message)
   def call(entity_id, behaviour, message), do: entity_id |> lookup_and_do(&call(&1, behaviour, message))
 
