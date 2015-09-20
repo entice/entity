@@ -3,9 +3,7 @@ defmodule Entice.Entity do
   Thin convenience wrapper around a `Entice.Utils.SyncEvent` manager.
   """
   alias Entice.Entity.Attribute
-  #alias Entice.Entity.AttributeNotify
   alias Entice.Entity.Coordination
-  #alias Entice.Entity.Trigger
   alias Entice.Entity
   alias Entice.Utils.ETSSupervisor
   alias Entice.Utils.SyncEvent
@@ -29,8 +27,6 @@ defmodule Entice.Entity do
     {:ok, ^entity_id, pid} = start_plain(entity_id, attributes)
     pid |> Attribute.register
     pid |> Coordination.register
-    #pid |> AttributeNotify.register
-    #pid |> Trigger.register
     {:ok, entity_id, pid}
   end
 
@@ -132,17 +128,6 @@ defmodule Entice.Entity do
   def remove_behaviour(entity, behaviour) when is_pid(entity) and is_atom(behaviour),
   do: SyncEvent.remove_handler(entity, behaviour)
   def remove_behaviour(entity_id, behaviour), do: entity_id |> lookup_and_do(&remove_behaviour(&1, behaviour))
-
-
-  # Listeners API
-
-
-  def add_attribute_listener(entity, listener_pid, initial_report \\ true) when is_pid(listener_pid),
-  do: AttributeNotify.add_listener(entity, listener_pid, initial_report)
-
-
-  def remove_attribute_listener(entity, listener_pid) when is_pid(listener_pid),
-  do: AttributeNotify.remove_listener(entity, listener_pid)
 
 
   # Internal
