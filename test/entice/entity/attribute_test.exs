@@ -14,6 +14,12 @@ defmodule Entice.Entity.AttributeTest do
   end
 
 
+  test "attribute existance", %{entity: pid} do
+    assert Attribute.has?(pid, TestAttr1)
+    assert not Attribute.has?(pid, TestAttr2)
+  end
+
+
   test "attribute adding", %{entity: pid} do
     Attribute.put(pid, %TestAttr2{})
     assert Attribute.has?(pid, TestAttr2) == true
