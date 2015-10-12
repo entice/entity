@@ -2,11 +2,11 @@ language: erlang
 sudo: false
 
 otp_release:
-- 17.5
+- 18.1
 
 before_install:
-- wget http://s3.hex.pm/builds/elixir/v1.0.4.zip
-- unzip -d elixir v1.0.4.zip
+- wget http://s3.hex.pm/builds/elixir/v1.1.1.zip
+- unzip -d elixir v1.1.1.zip
 
 before_script:
 - export PATH=`pwd`/elixir/bin:$PATH

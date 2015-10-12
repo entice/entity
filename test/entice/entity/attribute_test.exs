@@ -39,7 +39,7 @@ defmodule Entice.Entity.AttributeTest do
 
   test "attribute getting", %{entity: pid} do
     %TestAttr1{} = Attribute.get(pid, TestAttr1)
-    assert nil = Attribute.get(pid, TestAttr2)
+    assert nil == Attribute.get(pid, TestAttr2)
 
     Attribute.put(pid, %TestAttr2{})
 
@@ -59,7 +59,7 @@ defmodule Entice.Entity.AttributeTest do
     assert %TestAttr1{foo: 42} = Attribute.get_and_update(pid, TestAttr1, fn _ -> %TestAttr1{foo: 42} end)
 
     assert :error = Attribute.fetch(pid, TestAttr2)
-    assert nil = Attribute.get_and_update(pid, TestAttr2, fn _ -> %TestAttr2{baz: true} end)
+    assert nil == Attribute.get_and_update(pid, TestAttr2, fn _ -> %TestAttr2{baz: true} end)
     assert :error = Attribute.fetch(pid, TestAttr2)
   end
 
