@@ -21,7 +21,7 @@ defmodule Entice.Logic.CoordinationTest do
 
   test "entity notification", %{entity_id: eid} do
     Spy.register(eid, self)
-    Coordination.notify(eid, :something)
+    assert :ok = Coordination.notify(eid, :something)
     assert_receive %{sender: ^eid, event: :something}
   end
 

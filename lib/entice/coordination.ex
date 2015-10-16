@@ -35,7 +35,11 @@ defmodule Entice.Entity.Coordination do
 
 
   @doc "This might fail silently. This is because entities might have died by the time we message them"
-  def notify(entity, message) when is_pid(entity), do: send(entity, message)
+  def notify(entity, message) when is_pid(entity) do
+    send(entity, message)
+    :ok
+  end
+
   def notify(nil, _message),                       do: {:error, :entity_nil}
   def notify(entity_id, message),                  do: notify(Entity.get(entity_id), message)
 
