@@ -15,19 +15,24 @@ defmodule Entice.Entity.Coordination do
   alias Entice.Entity
 
 
-  def start(), do: :pg2.create(__MODULE__)
+  defstruct channel: nil
 
 
-  def register(entity_id) when not is_pid(entity_id), do: register(Entity.fetch!(entity_id))
-  def register(entity) do
-    :pg2.join(__MODULE__, entity)
-    Entity.put_behaviour(entity, Coordination.Behaviour, [])
+  def start(), do: :pg2.start()
+
+
+  def register(entity_id, channel) when not is_pid(entity_id) and is_atom(channel), do: register(Entity.fetch!(entity_id), channel)
+  def register(entity, channel) when is_atom(channel) do
+    :pg2.create(channel) # does nothing if exists
+    :pg2.join(channel, entity)
+    Entity.put_behaviour(entity, Coordination.Behaviour, {channel})
   end
 
 
-  def register_observer(pid) when is_pid(pid) do
-    :pg2.join(__MODULE__, pid)
-    notify_observe(pid)
+  def register_observer(pid, channel) when is_pid(pid) do
+    :pg2.create(channel) # does nothing if exists
+    :pg2.join(channel, pid)
+    notify_observe(channel, pid)
   end
 
 
@@ -40,30 +45,30 @@ defmodule Entice.Entity.Coordination do
     :ok
   end
 
-  def notify(nil, _message),                       do: {:error, :entity_nil}
-  def notify(entity_id, message),                  do: notify(Entity.get(entity_id), message)
+  def notify(nil, _message),      do: {:error, :entity_nil}
+  def notify(entity_id, message), do: notify(Entity.get(entity_id), message)
 
 
-  def notify_all(message) do
-    :pg2.get_members(__MODULE__) |> Enum.map(
+  def notify_all(channel, message) do
+    :pg2.get_members(channel) |> Enum.map(
       fn pid -> send(pid, message) end)
   end
 
 
-  def notify_join(entity_id, %{} = attributes) when not is_pid(entity_id),
-  do: notify_all({:entity_join, %{entity_id: entity_id, attributes: attributes}})
+  def notify_join(channel, entity_id, %{} = attributes) when not is_pid(entity_id),
+  do: notify_all(channel, {:entity_join, %{entity_id: entity_id, attributes: attributes}})
 
 
-  def notify_change(entity_id, {%{} = added, %{} = changed, %{} = removed}) when not is_pid(entity_id),
-  do: notify_all({:entity_change, %{entity_id: entity_id, added: added, changed: changed, removed: removed}})
+  def notify_change(channel, entity_id, {%{} = added, %{} = changed, %{} = removed}) when not is_pid(entity_id),
+  do: notify_all(channel, {:entity_change, %{entity_id: entity_id, added: added, changed: changed, removed: removed}})
 
 
-  def notify_leave(entity_id, %{} = attributes) when not is_pid(entity_id),
-  do: notify_all({:entity_leave, %{entity_id: entity_id, attributes: attributes}})
+  def notify_leave(channel, entity_id, %{} = attributes) when not is_pid(entity_id),
+  do: notify_all(channel, {:entity_leave, %{entity_id: entity_id, attributes: attributes}})
 
 
-  def notify_observe(pid) when is_pid(pid),
-  do: notify_all({:observer_join, %{observer: pid}})
+  def notify_observe(channel, pid) when is_pid(pid),
+  do: notify_all(channel, {:observer_join, %{observer: pid}})
 
 
   # This should be replaced by another process that does the monitoring from the outside,
@@ -73,9 +78,9 @@ defmodule Entice.Entity.Coordination do
     alias Entice.Entity.Coordination
     alias Entice.Entity
 
-    def init(%Entity{attributes: attribs} = entity, _args) do
-      Coordination.notify_join(entity.id, attribs)
-      {:ok, entity}
+    def init(%Entity{attributes: attribs} = entity, {channel}) do
+      Coordination.notify_join(channel, entity.id, attribs)
+      {:ok, entity |> put_attribute(%Coordination{channel: channel})}
     end
 
 
@@ -90,15 +95,17 @@ defmodule Entice.Entity.Coordination do
     end
 
 
-    def handle_change(%Entity{attributes: old_attributes}, %Entity{attributes: new_attributes} = entity) do
+    def handle_change(
+        %Entity{attributes: old_attributes},
+        %Entity{attributes: %{Coordination => %Coordination{channel: channel}} = new_attributes} = entity) do
       change_set = diff(old_attributes, new_attributes)
-      if not_empty?(change_set), do: Coordination.notify_change(entity.id, change_set)
+      if not_empty?(change_set), do: Coordination.notify_change(channel, entity.id, change_set)
       :ok
     end
 
 
-    def terminate(_reason, %Entity{attributes: attribs} = entity) do
-      Coordination.notify_leave(entity.id, attribs)
+    def terminate(_reason, %Entity{attributes: %{Coordination => %Coordination{channel: channel}} = attribs} = entity) do
+      Coordination.notify_leave(channel, entity.id, attribs)
       {:ok, entity}
     end
 
