@@ -49,6 +49,9 @@ defmodule Entice.Entity.Coordination do
   def notify(entity_id, message), do: notify(Entity.get(entity_id), message)
 
 
+  def notify_locally(entity, message), do: notify(entity, {:coordination_notify_locally, message})
+
+
   def notify_all(channel, message) do
     :pg2.get_members(channel) |> Enum.map(
       fn pid -> send(pid, message) end)
@@ -83,6 +86,11 @@ defmodule Entice.Entity.Coordination do
       {:ok, entity |> put_attribute(%Coordination{channel: channel})}
     end
 
+
+    def handle_event({:coordination_notify_locally, message}, %Entity{attributes: %{Coordination => %Coordination{channel: channel}}} = entity) do
+      Coordination.notify_all(channel, message)
+      {:ok, entity}
+    end
 
     def handle_event({:entity_join, %{entity_id: sender_entity, attributes: _attrs}}, %Entity{attributes: attribs} = entity) do
       Coordination.notify(sender_entity, {:entity_join, %{entity_id: entity.id, attributes: attribs}}) # announce ourselfes to the new entity

@@ -48,6 +48,25 @@ defmodule Entice.Logic.CoordinationTest do
   end
 
 
+  test "notification of all entities local to an entity", %{entity_id: eid} do
+    {:ok, id1, e1} = Entity.start
+    {:ok, id2, e2} = Entity.start
+    {:ok, id3, e3} = Entity.start
+    Coordination.register(e1, __MODULE__)
+    Coordination.register(e2, __MODULE__)
+    Coordination.register(e3, __MODULE__)
+    Spy.register(e1, self)
+    Spy.register(e2, self)
+    Spy.register(e3, self)
+
+    Coordination.notify_locally(eid, :test_message)
+
+    assert_receive %{sender: ^id1, event: :test_message}
+    assert_receive %{sender: ^id2, event: :test_message}
+    assert_receive %{sender: ^id3, event: :test_message}
+  end
+
+
   test "observer registry", %{entity_id: eid} do
     assert_receive {:entity_join, %{
       entity_id: ^eid,
