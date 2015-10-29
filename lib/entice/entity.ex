@@ -26,7 +26,6 @@ defmodule Entice.Entity do
   def start(entity_id, attributes) when is_map(attributes) do
     {:ok, ^entity_id, pid} = start_plain(entity_id, attributes)
     pid |> Attribute.register
-    pid |> Coordination.register
     {:ok, entity_id, pid}
   end
 

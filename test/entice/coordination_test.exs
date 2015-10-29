@@ -11,9 +11,12 @@ defmodule Entice.Logic.CoordinationTest do
 
   setup do
     {:ok, eid, _pid} = Entity.start
+    eid |> Coordination.register(__MODULE__)
 
     Entity.put_attribute(eid, %TestAttr1{})
     Entity.put_attribute(eid, %TestAttr2{})
+
+    Coordination.register_observer(self, __MODULE__)
 
     {:ok, [entity_id: eid]}
   end
@@ -30,11 +33,33 @@ defmodule Entice.Logic.CoordinationTest do
     {:ok, id1, e1} = Entity.start
     {:ok, id2, e2} = Entity.start
     {:ok, id3, e3} = Entity.start
+    Coordination.register(e1, __MODULE__)
+    Coordination.register(e2, __MODULE__)
+    Coordination.register(e3, __MODULE__)
     Spy.register(e1, self)
     Spy.register(e2, self)
     Spy.register(e3, self)
 
-    Coordination.notify_all(:test_message)
+    Coordination.notify_all(__MODULE__, :test_message)
+
+    assert_receive %{sender: ^id1, event: :test_message}
+    assert_receive %{sender: ^id2, event: :test_message}
+    assert_receive %{sender: ^id3, event: :test_message}
+  end
+
+
+  test "notification of all entities local to an entity", %{entity_id: eid} do
+    {:ok, id1, e1} = Entity.start
+    {:ok, id2, e2} = Entity.start
+    {:ok, id3, e3} = Entity.start
+    Coordination.register(e1, __MODULE__)
+    Coordination.register(e2, __MODULE__)
+    Coordination.register(e3, __MODULE__)
+    Spy.register(e1, self)
+    Spy.register(e2, self)
+    Spy.register(e3, self)
+
+    Coordination.notify_locally(eid, :test_message)
 
     assert_receive %{sender: ^id1, event: :test_message}
     assert_receive %{sender: ^id2, event: :test_message}
@@ -43,7 +68,6 @@ defmodule Entice.Logic.CoordinationTest do
 
 
   test "observer registry", %{entity_id: eid} do
-    Coordination.register_observer(self())
     assert_receive {:entity_join, %{
       entity_id: ^eid,
       attributes: %{
@@ -53,7 +77,6 @@ defmodule Entice.Logic.CoordinationTest do
 
 
   test "add attributes", %{entity_id: eid} do
-    Coordination.register_observer(self())
     Entity.put_attribute(eid, %TestAttr3{})
     assert_receive {:entity_change, %{
       entity_id: ^eid,
@@ -64,7 +87,6 @@ defmodule Entice.Logic.CoordinationTest do
 
 
   test "change attributes", %{entity_id: eid} do
-    Coordination.register_observer(self())
     Entity.put_attribute(eid, %TestAttr1{foo: 42})
     assert_receive {:entity_change, %{
       entity_id: ^eid,
@@ -75,7 +97,6 @@ defmodule Entice.Logic.CoordinationTest do
 
 
   test "delete attributes", %{entity_id: eid} do
-    Coordination.register_observer(self())
     Entity.remove_attribute(eid, TestAttr1)
     assert_receive {:entity_change, %{
       entity_id: ^eid,
@@ -86,9 +107,8 @@ defmodule Entice.Logic.CoordinationTest do
 
 
   test "entity join" do
-    Coordination.register_observer(self())
     {:ok, eid2, _pid} = Entity.start_plain()
-    Coordination.register(eid2)
+    Coordination.register(eid2, __MODULE__)
     assert_receive {:entity_join, %{
       entity_id: ^eid2,
       attributes: %{}}}
@@ -96,7 +116,6 @@ defmodule Entice.Logic.CoordinationTest do
 
 
   test "entity leave", %{entity_id: eid} do
-    Coordination.register_observer(self())
     Entity.stop(eid)
     assert_receive {:entity_leave, %{
       entity_id: ^eid,
