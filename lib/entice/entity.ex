@@ -3,7 +3,6 @@ defmodule Entice.Entity do
   Thin convenience wrapper around a `Entice.Utils.SyncEvent` manager.
   """
   alias Entice.Entity.Attribute
-  alias Entice.Entity.Coordination
   alias Entice.Entity
   alias Entice.Utils.ETSSupervisor
   alias Entice.Utils.SyncEvent
