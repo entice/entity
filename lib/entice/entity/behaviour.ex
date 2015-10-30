@@ -29,7 +29,7 @@ defmodule Entice.Entity.Behaviour do
       do: %Entity{entity | attributes: Map.put(attrs, attribute_type, attribute)}
 
       def update_attribute(%Entity{attributes: attrs} = entity, attribute_type, modifier)
-      when is_atom(attribute_type) do
+      when is_atom(attribute_type) and is_function(modifier, 1) do
         case Map.has_key?(attrs, attribute_type) do
           true -> %Entity{entity | attributes: Map.update!(attrs, attribute_type, modifier)}
           false -> entity
@@ -38,6 +38,9 @@ defmodule Entice.Entity.Behaviour do
 
       def remove_attribute(%Entity{attributes: attrs} = entity, attribute_type) when is_atom(attribute_type),
       do: %Entity{entity | attributes: Map.delete(attrs, attribute_type)}
+
+      def attribute_transaction(%Entity{attributes: attrs} = entity, modifier) when is_function(modifier, 1),
+      do: %Entity{entity | attributes: modifier.(attrs)}
     end
   end
 end
