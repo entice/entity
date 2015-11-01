@@ -35,7 +35,9 @@ defmodule Entice.Entity.Test.Spy do
       {:ok, entity}
     end
 
-    def terminate(_reason, entity),
-    do: {:ok, entity |> remove_attribute(Spy)}
+    def terminate(reason, %Entity{id: id, attributes: %{Spy => %Spy{reporter: pid}}} = entity) do
+      send(pid, %{sender: id, event: {:entity_terminate, reason}})
+      {:ok, entity |> remove_attribute(Spy)}
+    end
   end
 end

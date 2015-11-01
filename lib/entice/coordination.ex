@@ -36,9 +36,6 @@ defmodule Entice.Entity.Coordination do
   end
 
 
-  # Internal API
-
-
   @doc "This might fail silently. This is because entities might have died by the time we message them"
   def notify(entity, message) when is_pid(entity) do
     send(entity, message)
@@ -56,6 +53,9 @@ defmodule Entice.Entity.Coordination do
     :pg2.get_members(channel) |> Enum.map(
       fn pid -> send(pid, message) end)
   end
+
+
+  # Internal API
 
 
   def notify_join(channel, entity_id, %{} = attributes) when not is_pid(entity_id),

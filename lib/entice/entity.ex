@@ -3,6 +3,7 @@ defmodule Entice.Entity do
   Thin convenience wrapper around a `Entice.Utils.SyncEvent` manager.
   """
   alias Entice.Entity.Attribute
+  alias Entice.Entity.Suicide
   alias Entice.Entity
   alias Entice.Utils.ETSSupervisor
   alias Entice.Utils.SyncEvent
@@ -25,6 +26,7 @@ defmodule Entice.Entity do
   def start(entity_id, attributes) when is_map(attributes) do
     {:ok, ^entity_id, pid} = start_plain(entity_id, attributes)
     pid |> Attribute.register
+    pid |> Suicide.register # if anyone asks, it was Et's idea
     {:ok, entity_id, pid}
   end
 
