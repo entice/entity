@@ -55,7 +55,7 @@ defmodule Entice.Entity.Coordination do
   end
 
 
-  def get_all(channel), do :pg2.get_members(channel)
+  def get_all(channel), do: :pg2.get_members(channel)
 
 
   # Internal API
