@@ -20,13 +20,20 @@ defmodule Entice.Entity.Suicide do
 
   @doc "Idea taken from Akka, terminates the entity normally"
   def poison_pill(entity),
-  do: Coordination.notify(entity, :suicide_poison_pill)
+  do: Coordination.notify(entity, poison_pill_message)
+
+
+  @doc """
+  Instead of using the direct poison pill function, this message
+  can also be sent (e.g. broadcasted)
+  """
+  def poison_pill_message, do: :suicide_poison_pill
 
 
   defmodule Behaviour do
     use Entice.Entity.Behaviour
 
     def handle_event(:suicide_poison_pill, entity),
-    do: {:stop, :normal, entity}
+    do: {:stop_process, :normal, entity}
   end
 end
