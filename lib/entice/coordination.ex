@@ -36,6 +36,9 @@ defmodule Entice.Entity.Coordination do
   end
 
 
+  def stop_channel(channel), do: :pg2.delete(channel)
+
+
   @doc "This might fail silently. This is because entities might have died by the time we message them"
   def notify(entity, message) when is_pid(entity) do
     send(entity, message)
