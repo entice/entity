@@ -36,7 +36,15 @@ defmodule Entice.Entity.Coordination do
   end
 
 
-  def stop_channel(channel), do: :pg2.delete(channel)
+  def stop_channel(channel) do
+    case :pg2.get_members(channel) do
+      {:error, {:no_such_group, ^channel}} -> :ok
+      [] -> :pg2.delete(channel)
+      [_|_] = members ->
+        members |> Enum.map(fn pid -> send(pid, {:coordination_stop_channel, channel}) end)
+        :pg2.delete(channel)
+    end
+  end
 
 
   @doc "This might fail silently. This is because entities might have died by the time we message them"
@@ -53,8 +61,12 @@ defmodule Entice.Entity.Coordination do
 
 
   def notify_all(channel, message) do
-    :pg2.get_members(channel) |> Enum.map(
-      fn pid -> send(pid, message) end)
+    case :pg2.get_members(channel) do
+      {:error, {:no_such_group, ^channel}} -> :error
+      [] -> :ok
+      [_|_] = members ->
+        members |> Enum.map(fn pid -> send(pid, message) end)
+    end
   end
 
 
@@ -93,17 +105,28 @@ defmodule Entice.Entity.Coordination do
     end
 
 
-    def handle_event({:coordination_notify_locally, message}, %Entity{attributes: %{Coordination => %Coordination{channel: channel}}} = entity) do
+    def handle_event(
+        {:coordination_stop_channel, channel},
+        %Entity{attributes: %{Coordination => %Coordination{channel: channel}}} = entity),
+    do: {:stop, :stop_channel, entity}
+
+    def handle_event(
+        {:coordination_notify_locally, message},
+        %Entity{attributes: %{Coordination => %Coordination{channel: channel}}} = entity) do
       Coordination.notify_all(channel, message)
       {:ok, entity}
     end
 
-    def handle_event({:entity_join, %{entity_id: sender_entity, attributes: _attrs}}, %Entity{attributes: attribs} = entity) do
+    def handle_event(
+        {:entity_join, %{entity_id: sender_entity, attributes: _attrs}},
+        %Entity{attributes: attribs} = entity) do
       Coordination.notify(sender_entity, {:entity_join, %{entity_id: entity.id, attributes: attribs}}) # announce ourselfes to the new entity
       {:ok, entity}
     end
 
-    def handle_event({:observer_join, %{observer: sender_pid}}, %Entity{attributes: attribs} = entity) do
+    def handle_event(
+        {:observer_join, %{observer: sender_pid}},
+        %Entity{attributes: attribs} = entity) do
       send(sender_pid, {:entity_join, %{entity_id: entity.id, attributes: attribs}}) # announce ourselfes to the new observer
       {:ok, entity}
     end
@@ -117,6 +140,8 @@ defmodule Entice.Entity.Coordination do
       :ok
     end
 
+
+    def terminate(:stop_channel, entity), do: {:ok, entity}
 
     def terminate(_reason, %Entity{attributes: %{Coordination => %Coordination{channel: channel}} = attribs} = entity) do
       Coordination.notify_leave(channel, entity.id, attribs)

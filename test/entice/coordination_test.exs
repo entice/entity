@@ -123,4 +123,11 @@ defmodule Entice.Logic.CoordinationTest do
         TestAttr1 => %TestAttr1{},
         TestAttr2 => %TestAttr2{}}}}
   end
+
+
+  test "gracefully stopping of channels" do
+    assert :ok = Coordination.stop_channel(__MODULE__)
+    assert :ok = Coordination.stop_channel(:non_existing_channel)
+    assert :error = Coordination.notify_all(:non_existing_channel, :blubb)
+  end
 end
