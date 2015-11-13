@@ -83,8 +83,8 @@ defmodule Entice.Entity.Attribute do
     do: {:ok, entity |> take_attributes(attribute_types), entity}
 
     def handle_call({:attribute_transaction, modifier}, entity) do
-      new_attributes = modifier.(entity.attributes)
-      {:ok, new_attributes, %Entity{entity | attributes: new_attributes}}
+      new_entity = entity |> attribute_transaction(modifier)
+      {:ok, new_entity.attributes, new_entity}
     end
 
     def handle_event({:attribute_put, attribute}, entity),
