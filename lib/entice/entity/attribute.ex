@@ -6,9 +6,8 @@ defmodule Entice.Entity.Attribute do
 
   See `Entity` for more information.
   """
-  alias Entice.Entity.Attribute
-  alias Entice.Entity.Coordination
   alias Entice.Entity
+  alias Entice.Entity.{Attribute, Coordination}
 
 
   def register(entity),

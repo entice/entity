@@ -4,7 +4,7 @@ defmodule Entice.Entity.Mixfile do
   def project do
     [app: :entice_entity,
      version: "0.0.1",
-     elixir: "~> 1.1",
+     elixir: "~> 1.2",
      deps: deps]
   end
 
@@ -14,8 +14,8 @@ defmodule Entice.Entity.Mixfile do
   end
 
   defp deps do
-    [{:entice_utils, github: "entice/utils", ref: "e80039a439753d743635b0a67b78fa04329f8930"},
-     {:uuid, "~> 1.0"},
+    [{:entice_utils, github: "entice/utils", ref: "79ead4dca77324b4c24f584468edbaff2029eeab"},
+     {:uuid, "~> 1.1"},
      {:inflex, "~> 1.5"}]
   end
 end

@@ -2,11 +2,9 @@ defmodule Entice.Entity do
   @moduledoc """
   Thin convenience wrapper around a `Entice.Utils.SyncEvent` manager.
   """
-  alias Entice.Entity.Attribute
-  alias Entice.Entity.Suicide
+  alias Entice.Entity.{Attribute, Suicide}
   alias Entice.Entity
-  alias Entice.Utils.ETSSupervisor
-  alias Entice.Utils.SyncEvent
+  alias Entice.Utils.{ETSSupervisor, SyncEvent}
 
 
   defstruct id: "", attributes: %{}

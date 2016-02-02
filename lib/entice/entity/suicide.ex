@@ -6,8 +6,7 @@ defmodule Entice.Entity.Suicide do
   (E.g. if you are referring to the entity indirectly via coordination etc.
   """
   alias Entice.Entity
-  alias Entice.Entity.Coordination
-  alias Entice.Entity.Suicide
+  alias Entice.Entity.{Coordination, Suicide}
 
 
   def register(entity),

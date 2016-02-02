@@ -1,8 +1,9 @@
 defmodule Entice.Entity.Application do
   use Application
+  alias Entice.Entity.{Coordination, Supervisor}
 
   def start(_type, _args) do
-    Entice.Entity.Coordination.start
-    Entice.Entity.Supervisor.start_link
+    Coordination.start
+    Supervisor.start_link
   end
 end
