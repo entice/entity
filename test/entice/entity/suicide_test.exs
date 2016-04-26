@@ -1,8 +1,7 @@
 defmodule Entice.Entity.SuicideTest do
   use ExUnit.Case, async: true
   alias Entice.Entity
-  alias Entice.Entity.Suicide
-  alias Entice.Entity.Test.Spy
+  alias Entice.Entity.{Suicide, Test.Spy}
 
 
   setup do

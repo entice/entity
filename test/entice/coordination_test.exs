@@ -1,8 +1,7 @@
 defmodule Entice.Logic.CoordinationTest do
   use ExUnit.Case, async: true
-  alias Entice.Entity.Coordination
   alias Entice.Entity
-  alias Entice.Entity.Test.Spy
+  alias Entice.Entity.{Coordination, Test.Spy}
 
   defmodule TestAttr1, do: defstruct foo: 1337, bar: "lol"
   defmodule TestAttr2, do: defstruct baz: false
